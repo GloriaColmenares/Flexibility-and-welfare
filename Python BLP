@@ -1,0 +1,2675 @@
+
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Apr 20 17:10:37 2021
+
+@author: Gloria Colmenares
+
+* revised on 21.04.2021
+
+"""
+
+import pyblp
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import scipy as sp
+from scipy import stats
+
+pyblp.options.digits = 4 #this is set at 2 in the tutorial
+pyblp.options.verbose = False
+pyblp.__version__
+
+
+###############################################################################
+# DECOMPOSITION OF COSTS
+###############################################################################
+
+
+###############################################################################
+#2019a
+###############################################################################
+#OFF
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1873)]
+product_data = vfi1.loc[(vfi1.block == "off"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a"
+product_data.to_csv('19aoff.csv', index = False)
+
+del product_data['Unnamed: 0']
+
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\off"
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("offnoFEcost.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("offnoFEcost.txt", "rb") as myFile:
+    offnoFEcost = pickle.load(myFile)
+
+
+
+#pvalues
+a = offnoFEcost
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=44743-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.68, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19aoff = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19aoff.to_excel('stats1.xlsx', index = True)
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+#2019a
+#PEAK1
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1873)]
+product_data = vfi1.loc[(vfi1.block == "peak1"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p1"
+product_data.to_csv('19ap1.csv', index = False)
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+#Post-estimation results
+
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p1.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p1.txt", "rb") as myFile:
+    p1 = pickle.load(myFile)
+
+
+#pvalues
+a = p1
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=31627-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.68, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19ap1 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19ap1.to_excel('stats2.xlsx', index = True)
+
+costs = results.compute_costs()
+
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+#2019a
+#PEAK2
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1873)]
+product_data = vfi1.loc[(vfi1.block == "peak2"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a"
+product_data.to_csv('19ap2.csv', index = False)
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p2"
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p2.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p2.txt", "rb") as myFile:
+    p2 = pickle.load(myFile)
+
+
+#pvalues
+a = p2
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=31627-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.68, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19ap2 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19ap2.to_excel('stats3.xlsx', index = True)
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+###############################################################################
+#2019b
+###############################################################################
+#OFF
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] >=1873)]
+product_data = vfi1.loc[(vfi1.block == "off"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b"
+product_data.to_csv('19boff.csv', index = False)
+
+del product_data['Unnamed: 0']
+
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\off"
+#this is to calculate p values for the demand side estructural errors
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("offnoFEcost.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("offnoFEcost.txt", "rb") as myFile:
+    offnoFEcost = pickle.load(myFile)
+
+
+#pvalues
+a = offnoFEcost
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(offnoFEcost['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19boff = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19boff.to_excel('stats4.xlsx', index = True)
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+#2019b
+#PEAK1
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] >=1873)]
+product_data = vfi1.loc[(vfi1.block == "peak1"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b"
+product_data.to_csv('19bp1.csv', index = False)
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p1"
+
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p1.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p1.txt", "rb") as myFile:
+    p1 = pickle.load(myFile)
+
+
+#pvalues
+a = p1
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p1['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19bp1 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19bp1.to_excel('stats5.xlsx', index = True)
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+#2019b
+#PEAK2
+
+ 
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] >=1873)]
+product_data = vfi1.loc[(vfi1.block == "peak2"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b"
+product_data.to_csv('19bp2.csv', index = False)
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p2"
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p2.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p2.txt", "rb") as myFile:
+    p2 = pickle.load(myFile)
+
+#pvalues
+a = p2
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p2['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19bp2 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19bp2.to_excel('stats6.xlsx', index = True)
+
+
+#Post-estimation results
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+###############################################################################
+#2020a
+###############################################################################
+#OFF
+ 
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1897)]
+product_data = vfi1.loc[(vfi1.block == "off"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a"
+product_data.to_csv('20aoff.csv', index = False)
+
+del product_data['Unnamed: 0']
+
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+#Post-estimation results
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\off"
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("offnoFEcost.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("offnoFEcost.txt", "rb") as myFile:
+    offnoFEcost = pickle.load(myFile)
+
+#pvalues
+a = offnoFEcost
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=31627-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.68, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats20aoff = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats20aoff.to_excel('stats7.xlsx', index = True)
+
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+ #2020a
+#peak1
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1897)]
+product_data = vfi1.loc[(vfi1.block == "peak1"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a"
+product_data.to_csv('20ap1.csv', index = False)
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p1"
+#pvalues
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p1.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p1.txt", "rb") as myFile:
+    p1 = pickle.load(myFile)
+
+
+#pvalues
+a = p1
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=31627-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats20ap1 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats20ap1.to_excel('stats8.xlsx', index = True)
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+#2020a
+#PEAK2
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1897)]
+product_data = vfi1.loc[(vfi1.block == "peak2"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a"
+product_data.to_csv('20ap2.csv', index = False)
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+
+#Post-estimation results
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p2"
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p2.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p2.txt", "rb") as myFile:
+    p2 = pickle.load(myFile)
+
+
+#pvalues
+a = p2
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p2['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats20ap2 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats20ap2.to_excel('stats9.xlsx', index = True)
+
+
+
+
+#Post-estimation results
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+###############################################################################
+#2020b
+###############################################################################
+#OFF
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] >=1897)]
+product_data = vfi1.loc[(vfi1.block == "off"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b"
+product_data.to_csv('20boff.csv', index = False)
+
+del product_data['Unnamed: 0']
+
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\off"
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("offnoFEcost.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("offnoFEcost.txt", "rb") as myFile:
+    offnoFEcost = pickle.load(myFile)
+
+
+
+
+#pvalues
+a = offnoFEcost
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(offnoFEcost['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats20boff = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats20boff.to_excel('stats10.xlsx', index = True)
+
+
+costs = results.compute_costs()
+
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+#2020b
+#PEAK1
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] >=1897)]
+product_data = vfi1.loc[(vfi1.block == "peak1"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b"
+product_data.to_csv('20bp1.csv', index = False)
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+#Post-estimation results
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p1"
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p1.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p1.txt", "rb") as myFile:
+    p1 = pickle.load(myFile)
+
+
+#pvalues
+a = p1
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p1['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats20bp1 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats20bp1.to_excel('stats11.xlsx', index = True)
+
+
+costs = results.compute_costs()
+
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+#2020b
+#PEAK2
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] >=1897)]
+product_data = vfi1.loc[(vfi1.block == "peak2"), ]
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b"
+product_data.to_csv('20bp2.csv', index = False)
+
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + fcost + fcoa + rampc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+#Post-estimation results
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p2"
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p2.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p2.txt", "rb") as myFile:
+    p2 = pickle.load(myFile)
+
+
+#pvalues
+a = p2
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p2['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['fcost', 'co2', 'rampc', 'price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats20bp2 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats20bp2.to_excel('stats12.xlsx', index = True)
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+###############################################################################
+# TOTAL COSTS
+###############################################################################
+
+#2019a - TC
+#OFF
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1873)]
+product_data = vfi1.loc[(vfi1.block == "off"), ]
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+
+del product_data['Unnamed: 0']
+
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\off\\tc"
+
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("offnoFEcost.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("offnoFEcost.txt", "rb") as myFile:
+    offnoFEcost = pickle.load(myFile)
+
+
+
+
+#pvalues
+a = offnoFEcost
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(offnoFEcost['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19aoff = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19aoff.to_excel('stats1t.xlsx', index = True)
+
+
+#Post-estimation results
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+#2019a
+#PEAK1 - tc
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1873)]
+product_data = vfi1.loc[(vfi1.block == "peak1"), ]
+
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p1\\tc"
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p1.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p1.txt", "rb") as myFile:
+    p1 = pickle.load(myFile)
+
+
+
+#pvalues
+a = p1
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p1['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19ap1 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19ap1.to_excel('stats2t.xlsx', index = True)
+
+
+#Post-estimation results
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+
+#2019a
+#PEAK1 - tc
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1873)]
+product_data = vfi1.loc[(vfi1.block == "peak1"), ]
+
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p1\\tc"
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p1.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p1.txt", "rb") as myFile:
+    p1 = pickle.load(myFile)
+
+
+
+#pvalues
+a = p1
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p1['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19ap1 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19ap1.to_excel('stats2t.xlsx', index = True)
+
+
+#Post-estimation results
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+#2019a
+#PEAK1 - tc
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1873)]
+product_data = vfi1.loc[(vfi1.block == "peak1"), ]
+
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p1\\tc"
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p1.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p1.txt", "rb") as myFile:
+    p1 = pickle.load(myFile)
+
+
+
+#pvalues
+a = p1
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p1['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19ap1 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19ap1.to_excel('stats2t.xlsx', index = True)
+
+
+#Post-estimation results
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+
+#################################ANTES DE ESTO REVISAR
+
+#2019b
+#peak1 -tc
+
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] >=1873)]
+product_data = vfi1.loc[(vfi1.block == "peak1"), ]
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p1\\tc"
+
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p1.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p1.txt", "rb") as myFile:
+    p1 = pickle.load(myFile)
+
+
+
+#pvalues
+a = p1
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p1['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19bp1 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19bp1.to_excel('stats5t.xlsx', index = True)
+
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+
+#2019b
+#peakk2 - tc
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] >=1873)]
+product_data = vfi1.loc[(vfi1.block == "peak2"), ]
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+del product_data['Unnamed: 0']
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p2\\tc"
+
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p2.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p2.txt", "rb") as myFile:
+    p2 = pickle.load(myFile)
+
+
+#pvalues
+a = p2
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p2['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats19bp2 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats19bp2.to_excel('stats6t.xlsx', index = True)
+
+
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+    
+
+#2020a
+#OFF -tc
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1897)]
+product_data = vfi1.loc[(vfi1.block == "off"), ]
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+
+del product_data['Unnamed: 0']
+
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+
+#Post-estimation results
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\off\\tc"
+
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("offnoFEcost.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("offnoFEcost.txt", "rb") as myFile:
+    offnoFEcost = pickle.load(myFile)
+
+
+#pvalues
+a = offnoFEcost
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(offnoFEcost['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats20aoff = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats20aoff.to_excel('stats7t.xlsx', index = True)
+
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+
+
+
+#2020a
+#peak1 -tc
+
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1897)]
+product_data = vfi1.loc[(vfi1.block == "peak1"), ]
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+
+del product_data['Unnamed: 0']
+
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+#Post-estimation results
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p1\\tc"
+
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p1.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p1.txt", "rb") as myFile:
+    p1 = pickle.load(myFile)
+
+
+
+#pvalues
+a = p1
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p1['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+Block = ["p1", "p1", "p1"]
+Period = ["2020a","2020a","2020a"]
+
+sample = len(np.concatenate(list([a[key] for key in ['contraction_evaluations']]), axis=0))
+
+sample2 = [sample,sample,sample]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+df6 = pd.DataFrame(Block, index= index, columns=['Block'])
+df7 = pd.DataFrame(Period, index= index, columns=['Period'])
+df8 = pd.DataFrame(sample2, index= index, columns=['n'])
+
+stats20ap1 = pd.concat([df1, df2, df3, df4, df5, df6, df7, df8], axis=1)
+
+stats20ap1.to_excel('stats8t.xlsx', index = True, index_label = "Type")
+
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+
+#2020a
+#peak2 -tc
+
+
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] <1897)]
+product_data = vfi1.loc[(vfi1.block == "peak2"), ]
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+
+del product_data['Unnamed: 0']
+
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+#Post-estimation results
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p2\\tc"
+
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p2.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p2.txt", "rb") as myFile:
+    p2 = pickle.load(myFile)
+
+
+#pvalues
+a = p2
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p2['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats20ap2 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats20ap2.to_excel('stats9t.xlsx', index = True)
+
+
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+#2020b
+#OFF -tc
+
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] >=1897)]
+product_data = vfi1.loc[(vfi1.block == "off"), ]
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+
+del product_data['Unnamed: 0']
+
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\off\\tc"
+
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("offnoFEcost.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("offnoFEcost.txt", "rb") as myFile:
+    offnoFEcost = pickle.load(myFile)
+
+
+#pvalues
+a = offnoFEcost
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(offnoFEcost['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats20boff = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats20boff.to_excel('stats10t.xlsx', index = True)
+
+
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+
+#2020b
+#peak1 -tc
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] >=1897)]
+product_data = vfi1.loc[(vfi1.block == "peak1"), ]
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+
+del product_data['Unnamed: 0']
+
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p1\\tc"
+
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p1.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p1.txt", "rb") as myFile:
+    p1 = pickle.load(myFile)
+
+
+#pvalues
+a = p1
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p1['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats20bp1 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats20bp1.to_excel('stats11t.xlsx', index = True)
+
+
+
+
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+#2020b
+#peak2 -tc
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+
+vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
+vfi1 = vfi[(vfi['time'] >=1897)]
+product_data = vfi1.loc[(vfi1.block == "peak2"), ]
+
+product_data['tc'] = product_data.loc[:,['fcost','fcoa', 'rampc']].sum(axis=1) 
+
+
+del product_data['Unnamed: 0']
+
+
+X1 = pyblp.Formulation('0 + prices') # +time dummies
+X2 = pyblp.Formulation('0  + loadf') 
+X3 = pyblp.Formulation('0 + tc') 
+
+logit_formulations = (
+    X1,
+    X2,
+    X3
+   )
+#logit_formulations
+
+mc_integration = pyblp.Integration('monte_carlo', size=50, specification_options={'seed' : 0})
+#mc_integration
+
+problem = pyblp.Problem(logit_formulations, product_data, integration = mc_integration)
+#problem
+
+bfgs = pyblp.Optimization('bfgs', {'gtol' : 1e-10})
+#bfgs
+
+results = problem.solve(sigma=np.ones((1,1)),
+                        beta = (0.5),
+                        optimization = bfgs,
+                        costs_bounds = (24.999, None))
+results
+
+elasticities = results.compute_elasticities
+elasticities
+
+
+
+#Post-estimation results
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p2\\tc"
+
+import pickle
+a = pyblp.ProblemResults.to_dict(results)
+a.keys()
+with open("p2.txt", "wb") as myFile:
+    pickle.dump(a, myFile)
+
+import pickle
+with open("p2.txt", "rb") as myFile:
+    p2 = pickle.load(myFile)
+
+
+#pvalues
+a = p2
+se = list([a[key] for key in ['gamma_se', 'beta_se', 'sigma_se']])
+se = np.concatenate(se, axis=0 )
+
+coeff = list([a[key] for key in ['gamma', 'beta', 'sigma']])
+coeff = np.concatenate(coeff, axis=0 )
+n=len(p2['xi'])-5 # degrees of freedom n-p, this is nrows from dataset minus coefficients (5)
+ts= coeff/se
+
+
+pval = (1-stats.t.cdf(np.abs(ts),n))*2 
+interval = stats.norm.interval(0.95, loc=coeff, scale=se/np.sqrt(n))
+CImin = interval[0]
+CImax = interval[1]
+
+#panda stats
+index = ['tc','price', 'loadf']
+
+df1 = pd.DataFrame(coeff, index=index, columns=['coeff'])
+df2 = pd.DataFrame(se, index=index, columns=['se'])
+df3 = pd.DataFrame(pval, index=index, columns=['p-val'])
+df4 = pd.DataFrame(CImin, index= index, columns=['CImin'])
+df5 = pd.DataFrame(CImax, index= index, columns=['CImax'])
+
+stats20bp2 = pd.concat([df1, df2, df3, df4, df5], axis=1)
+
+stats20bp2.to_excel('stats12t.xlsx', index = True)
+
+
+costs = results.compute_costs()
+
+profits = results.compute_profits(costs=costs)
+plt.hist(profits, bins=50);
+plt.legend(['profits']);
+
+cs=results.compute_consumer_surpluses()
+plt.hist(cs, bins=50);
+plt.legend(['consumer surplus']);
+
+profitss=pd.DataFrame(profits)
+consumers=pd.DataFrame(cs) 
+
+icps1_o = pd.concat([profitss, consumers], axis=1, sort=False)
+icps1_o.to_csv('icps1_o.csv', index = False)
+
+
+
+##############################################################################
+#Merging results
+##############################################################################
+
+#Pass-through decomposition
+import os
+import pandas as pd
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\All"
+cwd = os.path.abspath('') 
+files = os.listdir(cwd) 
+
+res_dr = pd.DataFrame()
+for file in files:
+     if file.endswith('.xlsx'):
+         res_dr = res_dr.append(pd.read_excel(file), ignore_index=True) 
+
+res_dr.to_excel('res_demand_response.xlsx', index = True)
+
+
+##############################
+#Pass-through total
+import os
+import pandas as pd
+
+cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\Total"
+
+cwd = os.path.abspath('') 
+files = os.listdir(cwd) 
+
+res_dr = pd.DataFrame()
+for file in files:
+     if file.endswith('.xlsx'):
+         res_dr = res_dr.append(pd.read_excel(file), ignore_index=True) 
+
+res_dr.to_excel('rest_demand_response.xlsx', index = True)
+
+
