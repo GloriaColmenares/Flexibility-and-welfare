@@ -1,0 +1,2792 @@
+#################################################################################
+# Evidence of Flexibility and its Economic Implications on the Day-ahead Electricity Market
+# Processing raw data, descriptive tables, ramping results and graphs, and building panel data for python
+# Period 23.12.2018 - 31.05.2019
+# Author : Gloria Colmenares
+# Created: May 2020
+# Last date updated: 18.05.2021
+#################################################################################
+
+remove(list = ls())
+
+if(FALSE){
+  install.packages('tidyverse')
+  library('tidyverse')
+  install.packages('tibbletime')
+  library(tibbletime)
+  library(lubridate)
+  install.packages("reshape2")
+  library("reshape2")
+  install.packages("data.table")
+  library("data.table")
+  install.packages('dummies')
+  library('dummies')
+  install.packages("caret")
+  library("caret")
+  install.packages("corrplot")
+  library("corrplot")
+  install.packages('writexl')
+  library('writexl')
+  library('readxl')
+  install.packages("psych")
+  library("psych")
+  install.packages("gridExtra")
+  library("gridExtra")
+  install.packages("pastecs")
+  library("pastecs")
+  library(readr)
+  library("tibble")
+  install.packages("xlsx")
+  library("xlsx")
+  install.packages("openxlsx")
+  library(openxlsx)
+  }
+
+
+#check if we need this
+##psmardc$date <- as.character(psmardc$date)
+
+#RAW DATA - START PROCESS
+#####################################################################################
+
+# 23.12.2018 - 31.05.2019 
+
+#####################################################################################
+
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189")
+
+
+#1c. Demand, SMARD
+#website: https://www.smard.de/home/downloadcenter/download-marktdaten#!?downloadAttributes=%7B%22selectedCategory%22:2,%22selectedSubCategory%22:5,%22selectedRegion%22:%22DE-LU%22,%22from%22:1545519600000,%22to%22:1559339999999,%22selectedFileType%22:%22CSV%22%7D
+#accesed on 04.02.2021
+demandc <- data.frame(read_delim("Realisierter_Stromverbrauch_201812230000_201905312359.csv", ";", escape_double = FALSE, 
+                                   locale = locale(decimal_mark = ","), 
+                                   trim_ws = TRUE))
+demandc <- demandc[,-c(4)]
+  
+demandc$Datum <- as.Date(demandc$Datum, "%d.%m.%Y")  
+demandc$date <- as.POSIXct(paste(demandc$Datum, demandc$Uhrzeit), format="%Y-%m-%d %H:%M:%S", tz='utc')
+demandc <- demandc %>% select(date, everything())
+demandc <- demandc[,-c(2,3)]
+ddc <- create_series('2018-12-23' ~ '2019-05-31', '15 min')
+
+dsmardc1 <- merge(ddc, demandc, by="date", all.x=T)
+colnames(dsmardc1)[2] <- 'demand'
+rm(demandc)
+#write_xlsx(dsmardc1, "dsmardc1.xlsx") #for the record
+
+dmsm1c <- ddc %>%
+mutate(demand = dsmardc1$demand) %>%
+collapse_by("hourly") %>%
+group_by(date) %>%
+summarize(
+  demand = sum(demand),
+) 
+
+demandc <- dmsm1c$demand
+rm(ddc, demandc, dsmardc1)
+
+ddhc <- create_series('2018-12-23' ~ '2019-05-31', '1 hour')
+dmsm1c[,"date"] <- ddhc 
+rm(ddhc)
+#write_xlsx(dmsm1c, "dmsm1c1.xlsx")
+
+  
+#########################################################
+
+#2c. prices SMARD, e.g., prices of the 23rd are used in the data as the 24th, so it starts from the 22nd.
+#website: https://www.smard.de/home/downloadcenter/download-marktdaten#!?downloadAttributes=%7B%22selectedCategory%22:3,%22selectedSubCategory%22:8,%22selectedRegion%22:%22DE%22,%22from%22:1545433200000,%22to%22:1559253599999,%22selectedFileType%22:%22CSV%22%7D
+#accesed on 08.02.2021
+pricesc <- data.frame(read_delim("Gro_handelspreise_201812220000_201905302359.csv", ";", escape_double = FALSE, 
+                                    locale = locale(decimal_mark = ","), 
+                                    trim_ws = TRUE))
+  
+pricesc <- pricesc[,-c(4:16)]
+pricesc$Datum <- as.Date(pricesc$Datum, "%d.%m.%Y")  
+pricesc$date <- as.POSIXct(paste(pricesc$Datum, pricesc$Uhrzeit), format="%Y-%m-%d %H:%M:%S", tz='utc')
+pricesc <- pricesc %>% select(date, everything())
+pricesc <- pricesc[,-c(2,3)]
+colnames(pricesc)[2] <- 'price'
+ddc <- create_series('2018-12-22' ~ '2019-05-30', '1 hour')
+colnames(ddc)[1] <- 'date'
+psmardc <- merge(ddc, pricesc, by="date")
+psmardc1 <- merge(ddc, psmardc, by="date", all.x=T)
+ddhc <- create_series('2018-12-23' ~ '2019-05-31', '1 hour')
+psmardc1[,"date"] <- ddhc 
+rm(ddc, ddhc, pricesc, psmardc)
+
+#write_xlsx(pricesc, "pricesc.xlsx")
+  
+
+#########################################################
+
+#3c. commodity prices AURORA
+#website: https://eos.auroraer.com/depower/
+#accesed on 08.02.2021
+
+#commodity prices
+coal <- read_xlsx("DE_Coal_Price_(08022021091735).xlsx")
+coalc <- coal[-c(1:5),-c(3:12)]
+coalc1 <- data.frame(as.numeric(rep(coalc$...2, each=24)))
+colnames(coalc1) <- c('pcoal')
+rm(coal, coalc)
+
+
+gas <- read_xlsx("DE_Gas_Price_(08022021102106).xlsx")
+gasc <- gas[-c(1:5),-c(3:12)]
+gasc1 <- data.frame(as.numeric(rep(gasc$...2, each=24)))
+colnames(gasc1) <- c('pgas')
+rm(gas, gasc)
+
+
+oil <- read_xlsx("DE_Oil_Price_(08022021102850).xlsx")
+oilc<- oil[-c(1:5),-c(3:12)]
+oilc1 <- data.frame(as.numeric(rep(oilc$...2, each=24)))
+colnames(oilc1) <- c('poil')
+rm(oil, oilc)
+
+
+coa <- read_xlsx("EU_CO2_Price_(08022021104338).xlsx")
+coac <- coa[-c(1:5),-c(3:12)]
+coac1 <- data.frame(as.numeric(rep(coac$...2, each=24)))
+colnames(coac1) <- c('pcoa')
+rm(coa, coac)
+
+ddhc <- create_series('2018-12-23' ~ '2019-05-31', '1 hour')
+ 
+fcostc <-cbind.data.frame(ddhc, coalc1, gasc1, oilc1, coac1)
+rm(ddhc, coalc1, gasc1,oilc1, coac1)
+
+
+#########################################################
+
+#4c. Realizierte Erzeugung (actual production) SMARD
+#website: https://www.smard.de/home/downloadcenter/download-marktdaten#!?downloadAttributes=%7B%22selectedCategory%22:1,%22selectedSubCategory%22:1,%22selectedRegion%22:%22DE-LU%22,%22from%22:1545519600000,%22to%22:1559339999999,%22selectedFileType%22:%22CSV%22%7D
+#accesed on 08.02.2021
+
+rsmard <- data.frame(read_delim("Realisierte_Erzeugung_201812230000_201905312359.csv", ";", escape_double = FALSE, 
+                                  locale = locale(decimal_mark = ","), 
+                                  trim_ws = TRUE))
+rsmard$Datum <- as.Date(rsmard$Datum, "%d.%m.%Y")  
+rsmard$date <- as.POSIXct(paste(rsmard$Datum, rsmard$Uhrzeit), format="%Y-%m-%d %H:%M:%S", tz='utc')
+rsmard <- rsmard %>% select(date, everything()) 
+rsmard <- rsmard[,-c(2,3)]
+ 
+ddc <- create_series('2018-12-23' ~ '2019-05-31', '15 min')
+rsmardc <- merge(ddc, rsmard, by="date", all.x=T)
+rsmardc$total <- rowSums(rsmardc[, 2:13])
+rm(rsmard)
+  
+rsmardc1 <- ddc %>%
+  mutate(biomass = rsmardc$Biomasse.MWh.,
+         hydro = rsmardc$Wasserkraft.MWh.,
+         windoff = rsmardc$Wind.Offshore.MWh.,
+         windon = rsmardc$Wind.Onshore.MWh.,
+         solar = rsmardc$Photovoltaik.MWh.,
+         serne = rsmardc$Sonstige.Erneuerbare.MWh.,
+         nuclear = rsmardc$Kernenergie.MWh.,
+         lignite = rsmardc$Braunkohle.MWh.,
+         coal = rsmardc$Steinkohle.MWh.,
+         gas = rsmardc$Erdgas.MWh.,
+         pump = rsmardc$Pumpspeicher.MWh.,
+         skonv = rsmardc$Sonstige.Konventionelle.MWh.,
+         total = rsmardc$total
+  ) %>%
+  collapse_by("hourly") %>%
+  group_by(date) %>%
+  summarise(
+    biomass = sum(biomass),
+    hydro = sum(hydro),
+    windoff = sum(windoff),
+    windon = sum(windon),
+    solar = sum(solar),
+    serne = sum(serne),
+    nuclear = sum(nuclear),
+    lignite = sum(lignite),
+    coal = sum(coal),
+    gas = sum(gas),
+    pump = sum(pump),
+    skonv = sum(skonv),
+    total=sum(total)
+  )
+
+rm(ddc,rsmardc)
+ddhc <- create_series('2018-12-23' ~ '2019-05-31', '1 hour')
+rsmardc1[,"date"] <- ddhc 
+
+lista <- list(psmardc1, fcostc, dmsm1c, rsmardc1)
+
+CV19c <- Reduce(
+  function(x,y,...) merge(x,y, ...),
+  lista
+   )
+
+rm(ddhc, dmsm1c, fcostc, lista, psmardc1, rsmardc1)
+
+
+CV19c$wind<- CV19c$windoff +CV19c$windon
+
+CV19c$shwind <- 100*(CV19c$wind)/(CV19c$total)
+CV19c$shgas <- 100*(CV19c$gas)/(CV19c$total)
+CV19c$shsolar <- 100*(CV19c$solar)/(CV19c$total)
+CV19c$shlig <- 100*(CV19c$lignite)/(CV19c$total)
+CV19c$shcoal <- 100*(CV19c$coal)/(CV19c$total)
+CV19c$shnuc <- 100*(CV19c$nuclear)/(CV19c$total)
+
+#save(CV19c, file = "CV19datac.RData") #for the records
+#load("CV19datac.RData") #freezing data
+
+#write_xlsx(CV19c, "CV19c.xlsx") #for the records
+
+
+#####################################################################################
+
+# 23.12.2019 - 31.05.2020 
+
+#####################################################################################
+
+#1d. Demand, SMARD
+#website: https://www.smard.de/home/downloadcenter/download-marktdaten#!?downloadAttributes=%7B%22selectedCategory%22:2,%22selectedSubCategory%22:5,%22selectedRegion%22:%22DE-LU%22,%22from%22:1577055600000,%22to%22:1590962399999,%22selectedFileType%22:%22CSV%22%7D
+#accesed on 09.02.2021
+demandd <- data.frame(read_delim("Realisierter_Stromverbrauch_201912230000_202005312359.csv", ";", escape_double = FALSE, 
+                                 locale = locale(decimal_mark = ","), 
+                                 trim_ws = TRUE))
+demandd <- demandd[,-c(4)]
+
+demandd$Datum <- as.Date(demandd$Datum, "%d.%m.%Y")  
+demandd$date <- as.POSIXct(paste(demandd$Datum, demandd$Uhrzeit), format="%Y-%m-%d %H:%M:%S", tz='utc')
+demandd <- demandd %>% select(date, everything())
+demandd <- demandd[,-c(2,3)]
+ddd <- create_series('2019-12-23' ~ '2020-05-31', '15 min')
+
+dsmardd1 <- merge(ddd, demandd, by="date", all.x=T)
+colnames(dsmardd1)[2] <- 'demand'
+rm(demandd)
+#write_xlsx(dsmardd1, "dsmardd1.xlsx") #for the record
+
+dmsm1d <- ddd %>%
+  mutate(demand = dsmardd1$demand) %>%
+  collapse_by("hourly") %>%
+  group_by(date) %>%
+  summarise(
+    demand = sum(demand),
+  ) 
+demandd <- dmsm1d$demand
+rm(ddd, demandd, dsmardd1)
+
+ddhd <- create_series('2019-12-23' ~ '2020-05-31', '1 hour')
+dmsm1d[,"date"] <- ddhd 
+rm(ddhd)
+#write_xlsx(dmsm1d, "dmsm1d1.xlsx")
+
+#########################################################
+
+#2d. prices SMARD, e.g., prices of the 23rd are used in the data as the 24th, so it starts from the 22nd.
+#website: https://www.smard.de/home/downloadcenter/download-marktdaten#!?downloadAttributes=%7B%22selectedCategory%22:3,%22selectedSubCategory%22:8,%22selectedRegion%22:%22DE-LU%22,%22from%22:1576969200000,%22to%22:1590875999999,%22selectedFileType%22:%22CSV%22%7D  
+#accesed on 09.02.2021
+pricesd <- data.frame(read_delim("Gro_handelspreise_201912220000_202005302359.csv", ";", escape_double = FALSE, 
+                                 locale = locale(decimal_mark = ","), 
+                                 trim_ws = TRUE))
+
+pricesd <- pricesd[,-c(4:16)]
+pricesd$Datum <- as.Date(pricesd$Datum, "%d.%m.%Y")  
+pricesd$date <- as.POSIXct(paste(pricesd$Datum, pricesd$Uhrzeit), format="%Y-%m-%d %H:%M:%S", tz='utc')
+pricesd <- pricesd %>% select(date, everything())
+pricesd <- pricesd[,-c(2,3)]
+colnames(pricesd)[2] <- 'price'
+ddd <- create_series('2019-12-22' ~ '2020-05-30', '1 hour')
+colnames(ddd)[1] <- 'date'
+psmardd <- merge(ddd, pricesd, by="date")
+psmardd1 <- merge(ddd, psmardd, by="date", all.x=T)
+ddhd <- create_series('2019-12-23' ~ '2020-05-31', '1 hour')
+psmardd1[,"date"] <- ddhd 
+rm(ddd, ddhd, pricesd, psmardd)
+
+#write_xlsx(pricesd, "pricesd.xlsx")
+
+
+#########################################################
+
+#3d. Commodity prices AURORA
+#website: https://eos.auroraer.com/depower/
+#accesed on 09.02.2021
+
+#commodity prices
+coal <- read_xlsx("DE_Coal_Price_(09022021133947).xlsx")
+coald <- coal[-c(1:5),-c(3:12)]
+coald1 <- data.frame(as.numeric(rep(coald$...2, each=24)))
+colnames(coald1) <- c('pcoal')
+rm(coal, coald)
+
+
+gas <- read_xlsx("DE_Gas_Price_(09022021134234).xlsx")
+gasd <- gas[-c(1:5),-c(3:12)]
+gasd1 <- data.frame(as.numeric(rep(gasd$...2, each=24)))
+colnames(gasd1) <- c('pgas')
+rm(gas, gasd)
+
+
+oil <- read_xlsx("DE_Oil_Price_(09022021134308).xlsx")
+oild<- oil[-c(1:5),-c(3:12)]
+oild1 <- data.frame(as.numeric(rep(oild$...2, each=24)))
+colnames(oild1) <- c('poil')
+rm(oil, oild)
+
+
+coa <- read_xlsx("EU_CO2_Price_(09022021134338).xlsx")
+coad <- coa[-c(1:5),-c(3:12)]
+coad1 <- data.frame(as.numeric(rep(coad$...2, each=24)))
+colnames(coad1) <- c('pcoa')
+rm(coa, coad)
+
+ddhd <- create_series('2019-12-23' ~ '2020-05-31', '1 hour')
+
+fcostd <-cbind.data.frame(ddhd, coald1, gasd1, oild1, coad1)
+rm(ddhd, coald1, gasd1, oild1, coad1)
+
+
+#########################################################
+
+#4d. Realizierte Erzeugung (actual production) SMARD
+#website: https://www.smard.de/home/downloadcenter/download-marktdaten#!?downloadAttributes=%7B%22selectedCategory%22:1,%22selectedSubCategory%22:1,%22selectedRegion%22:%22DE-LU%22,%22from%22:1577055600000,%22to%22:1590962399999,%22selectedFileType%22:%22CSV%22%7D
+#accesed on 09.02.2021
+
+rsmard <- data.frame(read_delim("Realisierte_Erzeugung_201912230000_202005312359.csv", ";", escape_double = FALSE, 
+                                locale = locale(decimal_mark = ","), 
+                                trim_ws = TRUE))
+rsmard$Datum <- as.Date(rsmard$Datum, "%d.%m.%Y")  
+rsmard$date <- as.POSIXct(paste(rsmard$Datum, rsmard$Uhrzeit), format="%Y-%m-%d %H:%M:%S", tz='utc')
+rsmard <- rsmard %>% select(date, everything()) 
+rsmard <- rsmard[,-c(2,3)]
+
+ddd <- create_series('2019-12-23' ~ '2020-05-31', '15 min')
+rsmardd <- merge(ddd, rsmard, by="date", all.x=T)
+rsmardd$total <- rowSums(rsmardd[, 2:13])
+rm(rsmard)
+
+rsmardd1 <- ddd %>%
+  mutate(biomass = rsmardd$Biomasse.MWh.,
+         hydro = rsmardd$Wasserkraft.MWh.,
+         windoff = rsmardd$Wind.Offshore.MWh.,
+         windon = rsmardd$Wind.Onshore.MWh.,
+         solar = rsmardd$Photovoltaik.MWh.,
+         serne = rsmardd$Sonstige.Erneuerbare.MWh.,
+         nuclear = rsmardd$Kernenergie.MWh.,
+         lignite = rsmardd$Braunkohle.MWh.,
+         coal = rsmardd$Steinkohle.MWh.,
+         gas = rsmardd$Erdgas.MWh.,
+         pump = rsmardd$Pumpspeicher.MWh.,
+         skonv = rsmardd$Sonstige.Konventionelle.MWh.,
+         total = rsmardd$total
+  ) %>%
+  collapse_by("hourly") %>%
+  group_by(date) %>%
+  summarise(
+    biomass = sum(biomass),
+    hydro = sum(hydro),
+    windoff = sum(windoff),
+    windon = sum(windon),
+    solar = sum(solar),
+    serne = sum(serne),
+    nuclear = sum(nuclear),
+    lignite = sum(lignite),
+    coal = sum(coal),
+    gas = sum(gas),
+    pump = sum(pump),
+    skonv = sum(skonv),
+    total=sum(total)
+  )
+
+rm(ddd,rsmardd)
+ddhd <- create_series('2019-12-23' ~ '2020-05-31', '1 hour')
+rsmardd1[,"date"] <- ddhd 
+
+lista <- list(psmardd1, fcostd, dmsm1d, rsmardd1)
+
+CV19d <- Reduce(
+  function(x,y,...) merge(x,y, ...),
+  lista
+)
+
+rm(ddhd, dmsm1d, fcostd, lista, psmardd1, rsmardd1)
+
+
+CV19d$wind<- CV19d$windoff +CV19d$windon
+
+CV19d$shwind <- 100*(CV19d$wind)/(CV19d$total)
+CV19d$shgas <- 100*(CV19d$gas)/(CV19d$total)
+CV19d$shsolar <- 100*(CV19d$solar)/(CV19d$total)
+CV19d$shlig <- 100*(CV19d$lignite)/(CV19d$total)
+CV19d$shcoal <- 100*(CV19d$coal)/(CV19d$total)
+CV19d$shnuc <- 100*(CV19d$nuclear)/(CV19d$total)
+
+#save(CV19d, file = "CV19datad.RData") #for the records
+#load("CV19datad.RData") #freezing data
+
+#write_xlsx(CV19d, "CV19d.xlsx") #for the records
+
+#####################################################################################
+#RAW DATA - END PROCESS
+
+
+#GRAPHS: Figure 3, 4, 5 - START
+#############################################################################################
+
+##Figure 3 - Prices and commodities
+graph3c <- ggplot(CV19c, aes(x=date)) + 
+  geom_line(aes(y = price, color = "Electricity"), size=0.05) + 
+  geom_line(aes(y = pcoal, color="Coal"), size=0.5)+
+  geom_line(aes(y = pgas, color="Gas"), size=0.5) +
+  geom_line(aes(y = poil, color="Oil"), size=0.5) +
+  geom_line(aes(y = pcoa, color="CO2", size=1), size=1)+
+  geom_vline(xintercept = as.numeric(CV19c$date[c(1873)]), #11mar00:00
+             color = "black", linetype="dashed", size=0.5)+
+  scale_colour_manual("", 
+                      values = c("Electricity"="red", "Coal"="black", "Gas"="purple","Oil"="darkgreen", "CO2"="blue" )) +
+  ylim(-100, 150)+
+  xlab('Hour')+ ylab('Euro')+
+  labs(title=" December 2018 - May 2019")+
+  theme(legend.position = c(0.25, 0.15),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))
+
+
+graph3d <- ggplot(CV19d, aes(x=date)) + 
+  geom_line(aes(y = price, color = "Electricity"), size=0.05) + 
+  geom_line(aes(y = pcoal, color="Coal"), size=0.7)+
+  geom_line(aes(y = pgas, color="Gas"), size=0.7) +
+  geom_line(aes(y = poil, color="Oil"), size=0.7) +
+  geom_line(aes(y = pcoa, color="CO2", size=1), size=1)+
+  geom_vline(xintercept = as.numeric(CV19d$date[c(1897)]), #11mar00:00
+             color = "black", linetype="dashed", size=0.5)+
+  scale_colour_manual("", 
+                      values = c("Electricity"="red", "Coal"="black", "Gas"="purple","Oil"="darkgreen", "CO2"="blue" )) +
+  ylim(-100, 150)+
+  xlab('Hour')+ ylab('Euro')+
+  labs(title="December 2019 - May 2020")+
+  theme(legend.position = c(0.25, 0.15),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))
+
+prices <- grid.arrange(graph3c, graph3d, ncol= 1)
+
+pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\prices.pdf",  
+    width = 10, 
+    height = 10) 
+plot(prices)
+dev.off()
+
+#########################################################
+
+##Figure 4 - Demand, 2 sources of inflexible conventional, and renewables production
+
+graph4c <- ggplot(CV19c, aes(x=date)) + 
+  geom_line(aes(y = (demand), color = "Demand"), size=0.2) + 
+  geom_line(aes(y = (solar), color="Solar",) )+
+  geom_line(aes(y = (windoff), color="Woff")) +
+  geom_line(aes(y = (windon), color="Won")) +
+  geom_line(aes(y = (lignite), color="Lignite")) +
+  geom_line(aes(y = (nuclear), color="Nuclear")) +
+  geom_vline(xintercept = (CV19c$date[c(1873)]), #11mar00:00
+             color = "black", linetype="dashed", size=0.5)+
+  scale_colour_manual("", 
+                      values = c("Demand"="black", "Solar"="yellow", "Woff"="lightblue","Won"="darkblue", "Lignite"="chocolate", "Nuclear"="orange" )) +
+  theme(legend.position = c(0.15, 1),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))+
+  labs(title="December 2018 - May 2019", x = "Hour",
+       y = "MWh",
+       color = "Legend")
+
+graph4d <- ggplot(CV19d, aes(x=date)) + 
+  geom_line(aes(y = (demand), color = "dm"), size=0.2) + 
+  geom_line(aes(y = (solar), color="sol",) )+
+  geom_line(aes(y = (windoff), color="wof")) +
+  geom_line(aes(y = (windon), color="won")) +
+  geom_line(aes(y = (lignite), color="lig")) +
+  geom_line(aes(y = (nuclear), color="nuc")) +
+  geom_vline(xintercept = (CV19d$date[c(1897)]), #11mar00:00
+             color = "black", linetype="dashed", size=0.5)+
+  scale_colour_manual("", 
+                      values = c("dm"="black", "sol"="yellow", "wof"="lightblue","won"="darkblue", "lig"="chocolate", "nuc"="orange" )) +
+  theme(legend.position = c(0.15, 1),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))+
+  labs(title="December 2019 - May 2020", x = "Hour",
+       y = "MWh",
+       color = "Legend")+
+  ylim(0, 80000)
+
+ren <- grid.arrange(graph4c, graph4d, ncol= 1)
+
+pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\ren.pdf",  
+    width = 10, 
+    height = 10) 
+plot(ren)
+dev.off()
+
+rm(graph1c, graph3d, graph3c, graph4d, prices, ren)
+
+#########################################################
+
+##Figure 5 - duck curves prognosierte Stromverbrauch und Erzeugung SMARD
+#website: https://www.smard.de/home/downloadcenter/download-marktdaten#!?downloadAttributes=%7B%22selectedCategory%22:2,%22selectedSubCategory%22:6,%22selectedRegion%22:%22DE-LU%22,%22from%22:1545519600000,%22to%22:1590962399999,%22selectedFileType%22:%22CSV%22%7D
+#accesed on 09.02.2021
+
+fload <- data.frame(read_delim("Prognostizierter_Stromverbrauch_201812230000_202005312359.csv", ";", escape_double = FALSE, 
+                               locale = locale(decimal_mark = ","), 
+                               trim_ws = TRUE, na = "-"))
+fload$Datum <- as.Date(fload$Datum, "%d.%m.%Y")  
+fload$date <- as.POSIXct(paste(fload$Datum, fload$Uhrzeit), format="%Y-%m-%d %H:%M:%S", tz='utc')
+fload <- fload %>% select(date, everything()) 
+fload <- fload[,-c(2:3,5)]
+colnames(fload)[2] <- 'fload'
+dduck <- create_series('2018-12-23' ~ '2020-05-31', '15 min')
+fload1 <- merge(dduck, fload, by="date", all.x=T)
+#cleaning duplicate dates from raw data 
+fload1 <- fload1[!duplicated(fload1$date), ]
+rm(fload)
+
+
+
+fprodr <- data.frame(read_delim("Prognostizierte_Erzeugung_201812230000_202005312359.csv", ";", escape_double = FALSE, 
+                                locale = locale(decimal_mark = ","), 
+                                trim_ws = TRUE))
+fprodr$Datum <- as.Date(fprodr$Datum, "%d.%m.%Y")  
+fprodr$date <- as.POSIXct(paste(fprodr$Datum, fprodr$Uhrzeit), format="%Y-%m-%d %H:%M:%S", tz='utc')
+fprodr <- fprodr %>% select(date, everything()) 
+fprodr <- fprodr[,-c(2:4,8)]
+fprodr$ren <- rowSums(fprodr[, 2:4])
+dduck <- create_series('2018-12-23' ~ '2020-05-31', '15 min')
+fprodr1 <- merge(dduck, fprodr, by="date", all.x=T)
+#cleaning duplicate dates from raw data
+fprodr1 <- fprodr1[!duplicated(fprodr1$date), ]
+
+fprodr1$netload <- fload1$fload - fprodr1$ren
+
+duck <- fprodr1[,-c(2:5)]
+
+
+duck1 <- dduck %>%
+  mutate(netload = duck$netload) %>%
+  collapse_by("hourly") %>%
+  group_by(date) %>%
+  summarise(
+    netload = sum(netload),
+  ) 
+duck1[is.na(duck1)] <- 0
+duck1$hour <- rep(c(24, 1:23), 526)
+
+dduck2 <- create_series('2018-12-23' ~ '2020-05-31', '1 hour')
+duck1[,"date"] <- dduck2 
+rm(dduck, duck, dduck2, fload1, fprodr, fprodr1)
+
+curva1 <- duck1[duck1$date >= "2018-12-23 00:00:00" & duck1$date <= "2019-03-11 00:00:00",]
+curva2 <- duck1[duck1$date > "2019-03-11 00:00:00" & duck1$date <= "2019-06-01 01:00:00",]
+curva3 <- duck1[duck1$date > "2019-12-23 00:00:00" & duck1$date <= "2020-03-11 00:00:00",]
+curva4 <- duck1[duck1$date > "2020-03-11 00:00:00" & duck1$date <= "2020-06-01 01:00:00",]
+
+curva11 <- aggregate(curva1[,2],  by = curva1[,3], FUN=mean, na=T)
+colnames(curva11)[2] <- "netload19a"
+
+curva22 <- aggregate(curva2[,2],  curva2[,3], FUN=mean, na=T)
+colnames(curva22)[2] <- "netload19d"
+
+
+curva33 <- aggregate(curva3[,2],  curva3[,3], FUN=mean, na=T)
+colnames(curva33)[2] <- "netload20a"
+
+
+curva44 <- aggregate(curva4[,2],  curva4[,3], FUN=mean, na=T)
+colnames(curva44)[2] <- "netload20d"
+
+
+duckbef<- cbind.data.frame(curva11, curva33)
+duckbef <- duckbef[,-c(3)]
+
+duckaf<- cbind.data.frame(curva22, curva44)
+duckaf <- duckaf[,-c(3)]
+
+rm(curva1, curva11, curva2, curva22,curva3, curva33, curva4, curva44, duck1)
+
+ducks <- merge.data.frame(duckbef, duckaf)
+
+
+graphd1 <- ggplot(duckbef, aes(x=hour)) + 
+  geom_line(aes(y = as.numeric(netload19a), color = "netload19"), size=1) + 
+  geom_line(aes(y = as.numeric(netload20a), color="netload20"), size=1 )+
+  scale_colour_manual("", 
+                      values = c("netload19"="black", "netload20"="red" )) +
+  theme_bw()+
+  labs(title="Panel A: 01.01.-10.03 ", x = "Hour",
+       y = "MWh",
+       color = "Legend")+ 
+  scale_x_continuous(breaks = c(0,6,13,20,24))+ 
+  scale_y_continuous(limits = c(15000,50000))+ 
+  #ylim(15000, 50000)+
+  theme(legend.position = c(0.25, 0.9),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))
+
+
+graphd2 <- ggplot(duckaf, aes(x=hour)) + 
+  geom_line(aes(y = as.numeric(netload19d), color = "netload19"), size=1) + 
+  geom_line(aes(y = as.numeric(netload20d), color="netload20"), size=1 )+
+  scale_colour_manual("", 
+                      values = c("netload19"="black", "netload20"="red" )) +
+  theme_bw()+
+  labs(title="Panel B: 11.03.-31.05", x = "Hour", 
+       y = "MWh",
+       color = "Legend")+
+  scale_x_continuous(breaks = c(0,6,13,20,24))+ 
+  scale_y_continuous(limits = c(15000,50000))+ 
+  theme(legend.position = c(0.25, 0.9),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))
+
+duck <- grid.arrange(graphd1, graphd2, ncol= 2)
+
+pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\duck.pdf",  
+    width = 10, 
+    height = 6) 
+plot(duck)
+dev.off()
+
+rm(duck, duckaf, duckbef, graphd1, graphd2)
+
+#############################################################################################
+#GRAPHS: Figure 3, 4, 5 - END
+.
+
+
+#PANEL DATA CONSTRUCTION FOR PYTHON PYPBLP - START1
+#############################################################################################
+
+#####################################################################################
+
+# 23.12.2018 - 20.04.2019 
+
+#####################################################################################
+
+
+#Input files:
+#1. plants.xlsx           - name ordering and tech categories
+#2. Output_xxxx.xlsx      - hourly electricity production per plant 
+#3. Inputdata_chp.xlsx    - firms and plants match
+#4. wchp_prm_a.xlsx       - probabilities to distribute chp
+#5. firmpy.xlsx           - codes of firms and plants
+#5. loadfa.xlsx           - load factors as actual prod in hour / max prod in the whole period of analysis
+#6. Marginalcosts19.xlsm  - fuel costs (Tab1) and CO2 costs (Tab2)
+#7. temper_all.xlsx       - temperatures per plant location
+#9. solar_all.xlsx        - solar radiation plant location
+#10. wind_all.xlsx        - wind speed plant location
+#11. rampchp2_a.xlsx.xlsx - ramping costs
+#12. CV19c.R              - R data, previous code
+
+#####################################################################################
+#Output files:
+#1. 20189_a.cvs           - csv data to read in python
+#2. Table_x.csv           - summary of python data to analysein histograms and trends
+#3. sharesl_a.xlsx        - markets (hours) used in the in the analysis
+
+#####################################################################################
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189")
+#Use Ia plus nueva info
+#blank sheet with plants and techs
+o <- read_xlsx("plants.xlsx")
+plants <- o[,-c(1)]
+o <- o[-c(1),-c(119:120)]
+o <- data.frame(o, stringsAsFactors = FALSE)
+
+
+#join 2018-2019 (c)
+o01 <- read_xlsx("Output_(10022021143401).xlsx")
+o02 <- read_xlsx("Output_(10022021143422).xlsx")
+o03 <- read_xlsx("Output_(20022021094554).xlsx")
+o04 <- read_xlsx("Output_(10022021143447).xlsx")
+o05 <- read_xlsx("Output_(10022021143501).xlsx")
+o06 <- read_xlsx("Output_(10022021143515).xlsx")
+o07 <- read_xlsx("Output_(10022021143615).xlsx")
+o08 <- read_xlsx("Output_(10022021143636).xlsx")
+o09 <- read_xlsx("Output_(10022021143653).xlsx")
+o10 <- read_xlsx("Output_(10022021143709).xlsx")
+o11 <- read_xlsx("Output_(10022021143726).xlsx")
+o12 <- read_xlsx("Output_(10022021143742).xlsx")
+o13 <- read_xlsx("Output_(10022021143758).xlsx")
+o14 <- read_xlsx("Output_(10022021143811).xlsx")
+o15 <- read_xlsx("Output_(10022021143826).xlsx")
+o16 <- read_xlsx("Output_(10022021143844).xlsx")
+o17 <- read_xlsx("Output_(10022021143900).xlsx")
+o18 <- read_xlsx("Output_(10022021143913).xlsx")
+o19 <- read_xlsx("Output_(10022021143930).xlsx")
+o20 <- read_xlsx("Output_(10022021143947).xlsx")
+o21 <- read_xlsx("Output_(10022021144004).xlsx")
+o22 <- read_xlsx("Output_(10022021144021).xlsx")
+o23 <- read_xlsx("Output_(10022021144215).xlsx")
+o24 <- read_xlsx("Output_(10022021144231).xlsx")
+
+
+lista <- lapply(ls(pattern="o[01-24]"), function(x) get(x)) #.* incluye sin 1
+
+
+for (m in 1:24){
+  colnames(lista[[m]]) = lista[[m]][5, ] 
+  lista[[m]] <- lista[[m]][-c(1:5), ]
+  lista[[m]] <- data.frame(lista[[m]], stringsAsFactors = FALSE)
+  lista[[m]] <- as.data.frame(lista[[m]])
+}
+
+
+for (i in seq(lista))
+  assign(paste0("o", i), lista[[i]])
+
+
+library(plyr)
+
+res <- rbind.fill(o,o1[,colnames(o1) %in% colnames(o)])
+res <- rbind.fill(res,o2[,colnames(o2) %in% colnames(res)])
+res <- rbind.fill(res,o3[,colnames(o3) %in% colnames(res)])
+res <- rbind.fill(res,o4[,colnames(o4) %in% colnames(res)])
+res <- rbind.fill(res,o5[,colnames(o5) %in% colnames(res)])
+res <- rbind.fill(res,o6[,colnames(o6) %in% colnames(res)])
+res <- rbind.fill(res,o7[,colnames(o7) %in% colnames(res)])
+res <- rbind.fill(res,o8[,colnames(o8) %in% colnames(res)])
+res <- rbind.fill(res,o9[,colnames(o9) %in% colnames(res)])
+res <- rbind.fill(res,o10[,colnames(o10) %in% colnames(res)])
+res <- rbind.fill(res,o11[,colnames(o11) %in% colnames(res)])
+res <- rbind.fill(res,o12[,colnames(o12) %in% colnames(res)])
+res <- rbind.fill(res,o13[,colnames(o13) %in% colnames(res)])
+res <- rbind.fill(res,o14[,colnames(o14) %in% colnames(res)])
+res <- rbind.fill(res,o15[,colnames(o15) %in% colnames(res)])
+res <- rbind.fill(res,o16[,colnames(o16) %in% colnames(res)])
+res <- rbind.fill(res,o17[,colnames(o17) %in% colnames(res)])
+res <- rbind.fill(res,o18[,colnames(o18) %in% colnames(res)])
+res <- rbind.fill(res,o19[,colnames(o19) %in% colnames(res)])
+res <- rbind.fill(res,o20[,colnames(o20) %in% colnames(res)])
+res <- rbind.fill(res,o21[,colnames(o21) %in% colnames(res)])
+res <- rbind.fill(res,o22[,colnames(o22) %in% colnames(res)])
+res <- rbind.fill(res,o23[,colnames(o23) %in% colnames(res)])
+res <- rbind.fill(res,o24[,colnames(o24) %in% colnames(res)])
+
+
+colnames(res)[1] <- c("stamp")
+
+res[, c(2:dim(res)[2])] <- sapply(res[, c(2:dim(res)[2])], as.numeric)
+
+rm(list=ls(pattern="o"),i,m, lista)
+
+names(res)[names(res) == 'Gersteinwerk.OCGT'] <- 'Gersteinwerk.CCGT'
+
+time <- c(1:3840)
+
+res <- add_column(res, time, .after = "stamp")
+
+rm(time)
+
+
+
+############################################################################
+#Data proportions
+cap <- res[, -c(1:2)]
+cap$suma <- rowSums(cap, na.rm=T)
+cap$demand <- CV19c$demand
+cap$prop <- cap$suma/cap$demand
+mean <- mean(cap$prop, na.rm = TRUE)  
+rm(cap)
+
+############################################################################
+
+
+#reading chp data
+chp <- read_xlsx("Inputdata_chp.xlsx")
+chp <- chp[c(1:3840),]
+res$chp <- chp$chp
+rm(chp)
+
+############################################################################
+
+wchp <- res[, c(3:120)]
+wchp1 <- data.frame(stack(wchp))
+wchp2 <- wchp1[, c(2,1)]
+time <- rep(c(1:3840),118)
+wchp3 <- cbind.data.frame(wchp2, time)
+wchp3$ix <- with(wchp3, paste(ind, time))
+wchp3 <- wchp3[,-c(1)]
+rm(wchp, wchp1,wchp2)
+#renaming for ease
+colnames(wchp3) <- c( "ener", "time", "ix")
+
+
+#reduction according to proportion due chp heat-optimized (eleck+warm) and indexing
+pr <- data.frame(read_excel("wchp_prm_a.xlsx", col_types = c("text",
+                                                             "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric"
+                                                             
+)))
+
+
+pr1 <- pr[-c(1:3), -c(1:2)]
+rm(pr)
+pr2 <- data.frame(stack(pr1))
+pr3 <- pr2[, c(2,1)]
+pr4 <- cbind.data.frame(pr3, time)
+pr4$ix <- with(pr4, paste(ind, time))
+pr4 <- pr4[,-c(1,3)]
+rm(pr2,pr3)
+##renaming
+colnames(pr4) <- c( "probchp", "ix")
+##adding tech matching to ix
+py1a <- merge(wchp3, pr4, by="ix")
+rm(pr1, pr4, wchp3)
+
+
+#Decision: use the proportions for electricity production reduction of chp plants due to heat-optimization
+py2b <- py1a
+py2b$enerchp <- py2b$ener*py2b$probchp
+py2b$plant <- gsub('[[:space:]].*', '', py2b$ix)
+
+py3b <- py2b[, c(3,5,6)]
+py4b <- py3b[order(py3b$time),]
+id <- rep(c(1:118),dim(res)[1])
+py5b <- cbind.data.frame(id, py4b)
+py6b <- acast(py5b, time~plant, value.var = "enerchp")
+
+py7b <- data.frame(py6b)
+rm(py1a, py2b,  py3b, py4b,  py5b,py6b, id)
+
+#####################################
+#outside good
+MW <- py7b
+res1 <- res[,-c(1,2)]
+
+MW$sump <- rowSums(MW, na.rm=T)
+MW$demand <- CV19c$demand
+MW$out <- MW$demand - MW$sump
+MW[MW<0] <- 0
+
+
+#####################################
+#adding shares
+
+rm(time)
+#dividing by sump
+plants <- data.frame(plants, stringsAsFactors = FALSE)
+sh <- round(MW[1:dim(res)[1],1:121]/MW[,120],8)
+
+summary(sh)
+
+sh <- sh[,-c(119:120)]
+sh1 <- sh[names(res1)]
+sh1$out <- sh$out
+res1$out <- MW$out
+sh2 <- data.frame(stack(sh1))
+sh2a <- sh2[,c(1)]
+m <- c(1:456960)
+sh3 <- cbind.data.frame(sh2a,m)
+colnames(sh3) <- c('shares', 'm')
+
+
+
+#####################################
+#start of the panel data 
+
+stamp <- rep(c(res[,c(1)]),119)
+firm <- data.frame(read_excel("firmpy.xlsx"))
+id<- rep(firm$id, each=dim(res)[1])
+hour <- rep(c(24, 1:23), 19040)  
+dayc <- rep(c("Su","Mo", "Tu", "W", "Th", "Fr", "Sa"),each =24)
+dayr <- rep(c(dayc), 23)
+dayr <-  head(dayr, -24)
+day <-  rep(c(dayr), 119)
+month <- as.numeric(substring(stamp,4,5))
+year <- as.numeric(substring(stamp,7,10))
+rm(dayc, dayr)
+#building market_ids
+time <- rep(c(1:3840),119)
+market_ids <- paste('T',str_pad(time, 5, pad = "0"))
+py1 <- cbind.data.frame(m,id,market_ids, time, hour, day, month, year)
+
+#####################################
+#firms to built product_ids
+
+firm1 <- firm[, -c(1,3)]
+py1a <- merge.data.frame(py1, firm1, by="id")
+product_ids <- paste('F',str_pad(py1a$firm_ids, 2, pad = "0"), 'P', str_pad(py1$id, 3, pad = "0"))
+py2 <- cbind.data.frame(py1, product_ids)
+py3 <- merge(py2, firm1, by="id")
+py4 <- py3%>%select(-1,1)
+setnames(py4, "id", "plant_ids")
+rm(day, hour, market_ids, product_ids, month, stamp, year, time, py1, py2, py1a, firm1)
+
+py5 <- merge(py4, sh3, by="m")
+rm(sh, sh1, sh2, sh2a, sh3, MW, py3,py7b)
+
+
+#####################################
+#adding prices
+
+py5$prices <- rep(CV19c$price,119)
+
+
+#####################################
+#adding loadf
+
+lf <- data.frame(read_excel("loadfa_a.xlsx"))
+lfmax <- sapply(res1, max, na.rm = TRUE)
+lf1 <- rbind.data.frame(lf, lfmax)
+lf2 <- sapply(lf1, max, na.rm = TRUE) #comparing max values
+lf3 <- rbind.data.frame(lf1, lf2)
+lf3 <- lf3[-c(1:2),]
+lf4 <- data.frame(round(mapply('/', res1, lf3),8))
+#max(lf4,na.rm = TRUE) #verfying < 1
+lf5<- data.frame(stack(lf4))
+lf6<- lf5[,-c(2)]
+lf7 <- cbind.data.frame(lf6,m)
+colnames(lf7) <- c('loadf', 'm')
+py6 <- merge(py5, lf7, by="m")
+rm(lf, lfmax, lf1, lf2, lf3, lf4, lf5, lf6, lf7, py4)
+
+
+#####################################
+#add fuel costs from inst for random logit
+
+fc <- data.frame(read_excel("Marginalcosts19.xlsm", sheet="Tab1"))
+fc1 <- fc[-c(1:2),-c(1:2)]
+fc2 <- data.frame(stack(fc1))
+fc3 <- fc2[,-c(2)]
+fc4 <- cbind.data.frame(fc3,m)
+colnames(fc4) <- c('fcost', 'm')
+
+py7 <- merge(py6, fc4, by="m")
+rm(fc, fc1, fc2, fc3, fc4)
+
+
+#####################################
+#add CO2 costs from inst for random logit
+
+fco <- data.frame(read_excel("Marginalcosts19.xlsm", sheet="Tab2"))
+fco1 <- fco[-c(1:2),-c(1:2)]
+fco2 <- data.frame(stack(fco1))
+fco3 <- fco2[,-c(2)]
+fco4 <- cbind.data.frame(fco3,m)
+colnames(fco4) <- c('fcoa', 'm')
+py8 <- merge(py7, fco4, by="m")
+rm(fco, fco1, fco2, fco3, fco4, py6)
+
+
+
+#####################################
+#adding temp
+
+#ddtp <- create_series('2018-12-23' ~ '2020-04-20', '1 hour')
+#write_xlsx(ddtp, "ddtp.xlsx")
+
+temper <- data.frame(read_excel("temper_all.xlsx"))
+temper[temper == -999] <- NA
+temper2<- temper[-c(1:3, 3844:dim(temper)[1]),-c(1:3)]
+temper2 <- transform(temper2, chp = rowMeans(temper2[,], na.rm = T))
+temper2$out <- temper2$chp
+temper2[,] <- lapply(temper2[,], round, 1)
+temper3<- data.frame(stack(temper2))
+temper4<- temper3[,-c(2)]
+temper5 <- cbind.data.frame(temper4,m)
+colnames(temper5) <- c('demand_instruments0', 'm')
+py9 <- merge(py8, temper5, by="m")
+rm(temper2, temper3, temper4, temper5,temper, py7)
+
+
+#####################################
+#adding solar
+
+solar <- data.frame(read_excel("solar_all.xlsx"))
+solar[solar == -999] <- NA
+solar2<- solar[-c(1:3,3844:dim(solar)[1]),-c(1:2)]
+solar2 <- transform(solar2, chp = rowMeans(solar2[,], na.rm = T))
+solar2$out <- solar2$chp
+solar3<- data.frame(stack(solar2))
+solar4<- solar3[,-c(2)]
+solar5 <- cbind.data.frame(solar4,m)
+colnames(solar5) <- c('solar', 'm')
+py91 <- merge(py9, solar5, by="m")
+rm(solar2, solar3, solar4, solar5,solar)
+
+#####################################
+#adding wind
+
+wind <- data.frame(read_excel("wind_all.xlsx"))
+wind[wind == -999] <- NA
+wind2<- wind[-c(1:3,3844:dim(wind)[1]),-c(1:2)]
+wind2 <- transform(wind2, chp = rowMeans(wind2[,], na.rm = T))
+wind2$out <- wind2$chp
+wind3<- data.frame(stack(wind2))
+wind4<- wind3[,-c(2)]
+wind5 <- cbind.data.frame(wind4,m)
+colnames(wind5) <- c('wind', 'm')
+py92 <- merge(py91, wind5, by="m")
+rm(wind2, wind3, wind4, wind5,wind)
+
+#####################################
+#Adding renewables
+ren <- CV19c$windoff + CV19c$windon + CV19c$windoff
+ren1 <- rep(ren,119)
+ren2 <- cbind.data.frame(m, ren1)
+py93 <- merge(py92, ren2, by="m")
+rm(ren, ren1, ren2)
+
+#Adding demand
+dm <- rep(CV19c[,"demand"],119)
+dm1 <- cbind.data.frame(m, dm)
+py94 <- merge(py93, dm1, by="m")
+rm(dm, dm1, py91, py92)
+
+
+######################################
+#technologies
+names(plants)[names(plants) == 'Gersteinwerk.OCGT'] <- 'Gersteinwerk.CCGT'
+cate1 <- stack(plants)
+colnames(cate1) <- c("nesting_ids", "plant")
+tech <- c("biom","wasser",	"windon", "windoff",	"solar",	"serne",	"kerne",	"braunk",	"steink",	"gasoc",	"pump", "oil", "skonv" ,"gasst", "gascc" , "oiloc", "chp", "out")
+techc <- c(1,       2,         4,        3,         5,        12,        7,        8 ,       9 ,      10,    11,     6     , 13      , 14,      15     , 16  ,    30  , 31)
+techa <- data.frame(tech, techc)
+colnames(techa) <- c("tech", "nesting_ids")
+techb <- merge(cate1, techa, by="nesting_ids")
+firm3 <-firm[,-c(3:4)]
+techc <- merge(firm3, techb, by="plant")
+colnames(techc)[2] <- "plant_ids"
+py10 <- merge(py94, techc, by="plant_ids")
+rm(cate1, techa, techb, techc, firm, firm3, tech)
+
+
+#####################################
+#add instruments for the supply side: fuel prices
+
+rm(m)
+
+attach(py10)
+py10$supply_instruments0[tech=="steink"] <- CV19c$pcoal
+py10$supply_instruments0[tech=="gasoc"] <- CV19c$pcoal
+py10$supply_instruments0[tech=="gasst"] <- CV19c$pcoal
+py10$supply_instruments0[tech=="gascc"] <- CV19c$pcoal
+py10$supply_instruments0[tech=="oil"]   <- CV19c$pcoal
+py10$supply_instruments0[tech=="skonv"] <- CV19c$pcoal
+py10$supply_instruments0[tech=="oiloc"] <- CV19c$pcoal
+detach(py10)
+py10$supply_instruments0[is.na(py10$supply_instruments0)] <- 0
+
+
+
+attach(py10)
+py10$supply_instruments1[tech=="steink"] <- CV19c$pgas
+py10$supply_instruments1[tech=="gasoc"] <- CV19c$pgas
+py10$supply_instruments1[tech=="gasst"] <- CV19c$pgas
+py10$supply_instruments1[tech=="gascc"] <- CV19c$pgas
+py10$supply_instruments1[tech=="oil"]   <- CV19c$pgas
+py10$supply_instruments1[tech=="skonv"] <- CV19c$pgas
+py10$supply_instruments1[tech=="oiloc"] <- CV19c$pgas
+detach(py10)
+py10$supply_instruments1[is.na(py10$supply_instruments1)] <- 0
+
+
+attach(py10)
+py10$supply_instruments2[tech=="steink"] <- CV19c$pcoa
+py10$supply_instruments2[tech=="gasoc"] <- CV19c$pcoa
+py10$supply_instruments2[tech=="gasst"] <- CV19c$pcoa
+py10$supply_instruments2[tech=="gascc"] <- CV19c$pcoa
+py10$supply_instruments2[tech=="oil"]   <- CV19c$pcoa
+py10$supply_instruments2[tech=="skonv"] <- CV19c$pcoa
+py10$supply_instruments2[tech=="oiloc"] <- CV19c$pcoa
+detach(py10)
+py10$supply_instruments2[is.na(py10$supply_instruments2)] <- 0
+
+
+rm(py8, py5, py9, py93, py94)
+
+#####################################
+#ramping costs
+ramp <- data.frame(read_excel("rampchp2_a.xlsx", col_types = c("text",
+                                                             "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric"
+
+
+)))
+
+
+ramp1 <- ramp[-c(1:2), c(3:121)]
+
+
+ramp2 <- data.frame(stack(ramp1))
+ramp3 <- ramp2[, c(2,1)]
+m <- c(1:456960)
+ramp4 <- cbind.data.frame(ramp3, m)
+ramp4 <- ramp4[,-c(1)]
+rm(ramp1, ramp2,ramp3)
+
+##renaming
+colnames(ramp4) <- c( "rampc", "m")
+
+py11 <- merge(py10, ramp4, by="m")
+
+
+py12 <- py11%>%select(-plant_ids,plant_ids)
+rm( py10)
+
+py13 <- py12%>%select(-m,m)
+
+###################################################################################
+#cleaning nas
+# N=431755 from a total of 456960 after cleaning for blank periods
+pyclean <- na.omit(py13)
+
+
+#################################################################################
+#VERIFICATIONS --
+
+#sum of shares in the market less than 1 
+#N=427941
+vff <- with(pyclean, subset(pyclean, plant_ids>=1 & plant_ids<128))
+
+summary(py13)
+
+#taking out shares close equal to 0 or 1: N=247924
+#N=247924/427941, loss of 42% of data
+vf <- with(vff, subset(vff, shares>0 & shares<0.999))
+
+#taking out periods where the the total sum of shares is 1:
+Summary <- aggregate(vf$shares, by=list(time=vf$time), FUN=sum)
+
+#N= 126 markets that sum higher than  0.99 in shares
+check <- with(Summary, subset(Summary,  x>=0.999))
+
+#N= 0 markets that sum 0 in shares
+check2 <- with(Summary, subset(Summary,  x<=0))
+b <- c(check$time)
+d <- c(check2$time)
+
+#final total N= 1080628, 1080628/1723864, total final loss of 0.37 data
+vf1 <- vf[!vf$time %in% b, ]
+vf2v <- vf1[!vf1$time %in% d, ]
+
+Summary2 <- aggregate(vf2v$shares, by=list(time=vf2v$time), FUN=sum)
+
+check3 <- with(Summary2, subset(Summary2, x>=0.999))#should be zero
+rm(check, check2, Summary, check3)
+
+#cheecking NAs in final dataset vf2
+sum(apply(vf2v, 1, anyNA))
+
+rm(pyclean, vf, vf1, vff)
+rm(b,d)
+
+write_xlsx(Summary2, "sharesl_a.xlsx") #shares that we are using in T markets
+
+
+#EXPORT TO CVS USE IN PYTHON
+
+attach(vf2v)
+vf2v$period[4<=month & month<=9] <- "Summer"
+vf2v$period[1<=month & month<=3] <- "Winter"
+vf2v$period[10<=month & month<=12] <- "Winter"
+detach(vf2v)
+
+
+attach(vf2v)
+vf2v$block[6<=hour & hour<=9] <- "peak1"
+vf2v$block[13<=hour & hour<=16] <- "peak2"
+vf2v$block[20<=hour & hour<=21] <- "off"
+vf2v$block[10<=hour & hour<=12] <- "peak1"
+vf2v$block[17<=hour & hour<=19] <- "peak2"
+vf2v$block[1<=hour & hour<=5] <- "off"
+vf2v$block[22<=hour & hour<=24] <- "off"
+detach(vf2v)
+
+vf2v <- cbind(vf2v, dummy(vf2v$block, sep = "_"))
+
+attach(vf2v)
+vf2v$week[day=="Mo" | day=="Tu" | day=="W" | day=="Th" | day=="Fr" ] <- "work"
+vf2v$week[day=="Sa" | day=="Su" ] <- "end"
+detach(vf2v)
+
+#ZD:temp, ZS: international fuel prices plus co2 prices. Taking out plant names, nesting ids, extra m to run python
+vf2 <- vf2v[,-c(19:20,27)]
+
+write.csv(vf2, file="201819_a.cvs")
+#b <-read.csv("201819_a.cvs")
+
+
+save(vf2, file = "Data20189.RData")
+# To load the data again
+#load("Data20189.RData")
+#save.image(file = "my_work_CV19_uno.RData")
+#load("my_work_CV19_uno.RData")
+rm(plants, py11, py12, ramp, ramp4, Summary2, res, res1, vf2v, id, m, py13)
+
+summary(vf2)
+
+#############################################################################################
+#PANEL DATA CONSTRUCTION FOR PYTHON PYPBLP - END1
+
+
+
+
+
+
+#PANEL DATA CONSTRUCTION FOR PYTHON PYPBLP - START2
+#############################################################################################
+
+#####################################################################################
+
+# 23.12.2019 - 20.04.2020 
+
+#####################################################################################
+
+#Input files:
+#similar description as before
+
+#####################################################################################
+#Output files:
+#similar description as before
+
+#####################################################################################
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189")
+
+#blank sheet with plants and techs9
+o <- read_xlsx("plants.xlsx")
+plants <- o[,-c(1)]
+o <- o[-c(1),-c(119:120)]
+o <- data.frame(o, stringsAsFactors = FALSE)
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190")
+
+#join 2019-2020 (d)
+o01 <- read_xlsx("Output_(10022021144324).xlsx")
+o02 <- read_xlsx("Output_(10022021144339).xlsx")
+o03 <- read_xlsx("Output_(13032021181238).xlsx")
+o04 <- read_xlsx("Output_(10022021144405).xlsx")
+o05 <- read_xlsx("Output_(10022021144420).xlsx")
+o06 <- read_xlsx("Output_(10022021144433).xlsx")
+o07 <- read_xlsx("Output_(10022021144449).xlsx")
+o08 <- read_xlsx("Output_(10022021144506).xlsx")
+o09 <- read_xlsx("Output_(10022021144522).xlsx")
+o10 <- read_xlsx("Output_(10022021144536).xlsx")
+o11 <- read_xlsx("Output_(10022021144556).xlsx")
+o12 <- read_xlsx("Output_(10022021144611).xlsx")
+o13 <- read_xlsx("Output_(10022021145252).xlsx")
+o14 <- read_xlsx("Output_(10022021145309).xlsx")
+o15 <- read_xlsx("Output_(10022021145341).xlsx")
+o16 <- read_xlsx("Output_(10022021145354).xlsx")
+o17 <- read_xlsx("Output_(10022021145411).xlsx")
+o18 <- read_xlsx("Output_(10022021145424).xlsx")
+o19 <- read_xlsx("Output_(10022021145436).xlsx")
+o20 <- read_xlsx("Output_(10022021145449).xlsx")
+o21 <- read_xlsx("Output_(10022021145521).xlsx")
+o22 <- read_xlsx("Output_(10022021145534).xlsx")
+o23 <- read_xlsx("Output_(10022021145549).xlsx")
+o24 <- read_xlsx("Output_(10022021145607).xlsx")
+o25 <- read_xlsx("Output_(21022021181920).xlsx")
+
+lista <- lapply(ls(pattern="o[01-25]"), function(x) get(x)) #.* incluye sin 1
+
+
+for (m in 1:25){
+  colnames(lista[[m]]) = lista[[m]][5, ] 
+  lista[[m]] <- lista[[m]][-c(1:5), ]
+  lista[[m]] <- data.frame(lista[[m]], stringsAsFactors = FALSE)
+  lista[[m]] <- as.data.frame(lista[[m]])
+}
+
+
+for (i in seq(lista))
+  assign(paste0("o", i), lista[[i]])
+
+
+library(plyr)
+
+res <- rbind.fill(o,o1[,colnames(o1) %in% colnames(o)])
+res <- rbind.fill(res,o2[,colnames(o2) %in% colnames(res)])
+res <- rbind.fill(res,o3[,colnames(o3) %in% colnames(res)])
+res <- rbind.fill(res,o4[,colnames(o4) %in% colnames(res)])
+res <- rbind.fill(res,o5[,colnames(o5) %in% colnames(res)])
+res <- rbind.fill(res,o6[,colnames(o6) %in% colnames(res)])
+res <- rbind.fill(res,o7[,colnames(o7) %in% colnames(res)])
+res <- rbind.fill(res,o8[,colnames(o8) %in% colnames(res)])
+res <- rbind.fill(res,o9[,colnames(o9) %in% colnames(res)])
+res <- rbind.fill(res,o10[,colnames(o10) %in% colnames(res)])
+res <- rbind.fill(res,o11[,colnames(o11) %in% colnames(res)])
+res <- rbind.fill(res,o12[,colnames(o12) %in% colnames(res)])
+res <- rbind.fill(res,o13[,colnames(o13) %in% colnames(res)])
+res <- rbind.fill(res,o14[,colnames(o14) %in% colnames(res)])
+res <- rbind.fill(res,o15[,colnames(o15) %in% colnames(res)])
+res <- rbind.fill(res,o16[,colnames(o16) %in% colnames(res)])
+res <- rbind.fill(res,o17[,colnames(o17) %in% colnames(res)])
+res <- rbind.fill(res,o18[,colnames(o18) %in% colnames(res)])
+res <- rbind.fill(res,o19[,colnames(o19) %in% colnames(res)])
+res <- rbind.fill(res,o20[,colnames(o20) %in% colnames(res)])
+res <- rbind.fill(res,o21[,colnames(o21) %in% colnames(res)])
+res <- rbind.fill(res,o22[,colnames(o22) %in% colnames(res)])
+res <- rbind.fill(res,o23[,colnames(o23) %in% colnames(res)])
+res <- rbind.fill(res,o24[,colnames(o24) %in% colnames(res)])
+res <- rbind.fill(res,o25[,colnames(o25) %in% colnames(res)])
+
+colnames(res)[1] <- c("stamp")
+
+res[, c(2:dim(res)[2])] <- sapply(res[, c(2:dim(res)[2])], as.numeric)
+
+rm(list=ls(pattern="o"),i,m, lista)
+
+names(res)[names(res) == 'Gersteinwerk.OCGT'] <- 'Gersteinwerk.CCGT'
+
+time <- c(1:3864)
+
+res <- add_column(res, time, .after = "stamp")
+
+rm(time)
+write_xlsx(res, "res2.xlsx")
+
+
+############################################################################
+#2.2. Data 
+cap <- res[, -c(1:2)]
+cap$suma <- rowSums(cap, na.rm=T)
+cap$demand <- CV19d$demand
+cap$prop <- cap$suma/cap$demand
+mean2 <- mean(cap$prop, na.rm = TRUE)  
+rm(cap)
+
+#% production/demand
+tmean <- (mean+mean2)/2
+rm(mean, mean2)
+
+############################################################################
+
+
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189")
+#reading chp data
+chp <- read_xlsx("Inputdata_chp.xlsx")
+chp <- chp[c(3841:7704),]
+res$chp <- chp$chp
+rm(chp)
+
+
+############################################################################
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190")
+wchp <- res[, c(3:120)]
+wchp1 <- data.frame(stack(wchp))
+wchp2 <- wchp1[, c(2,1)]
+time <- rep(c(1:3864),118)
+wchp3 <- cbind.data.frame(wchp2, time)
+wchp3$ix <- with(wchp3, paste(ind, time))
+wchp3 <- wchp3[,-c(1)]
+rm(wchp, wchp1,wchp2)
+#renaming for ease
+colnames(wchp3) <- c( "ener", "time", "ix")
+
+
+#reduction according to proportion due chp heat-optimized (eleck+warm) and indexing
+pr <- data.frame(read_excel("wchp_prm_b.xlsx", col_types = c("text",
+                                                             "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                             "numeric", "numeric", "numeric", "numeric", "numeric"
+                                                             
+)))
+
+pr1 <- pr[-c(1:3), -c(1:2)]
+rm(pr)
+pr2 <- data.frame(stack(pr1))
+pr3 <- pr2[, c(2,1)]
+pr4 <- cbind.data.frame(pr3, time)
+pr4$ix <- with(pr4, paste(ind, time))
+pr4 <- pr4[,-c(1,3)]
+rm(pr2,pr3)
+##renaming
+colnames(pr4) <- c( "probchp", "ix")
+##adding tech matching to ix
+py1a <- merge(wchp3, pr4, by="ix")
+rm(pr1, pr4, wchp3)
+
+
+#Decision: use the proportions for electricity production reduction of chp plants due to heat-optimization
+py2b <- py1a
+py2b$enerchp <- py2b$ener*py2b$probchp
+py2b$plant <- gsub('[[:space:]].*', '', py2b$ix)
+
+py3b <- py2b[, c(3,5,6)]
+py4b <- py3b[order(py3b$time),]
+id <- rep(c(1:118),dim(res)[1])
+py5b <- cbind.data.frame(id, py4b)
+py6b <- acast(py5b, time~plant, value.var = "enerchp")
+
+py7b <- data.frame(py6b)
+rm(py1a, py2b,  py3b, py4b,  py5b,py6b, id)
+
+#####################################
+#outside good
+MW <- py7b
+res1 <- res[,-c(1,2)]
+
+MW$sump <- rowSums(MW, na.rm=T)
+MW$demand <- CV19d$demand
+MW$out <- MW$demand - MW$sump
+MW[MW<0] <- 0
+
+
+#####################################
+#adding shares
+
+rm(time)
+#dividing by sump
+plants <- data.frame(plants, stringsAsFactors = FALSE)
+sh <- round(MW[1:dim(res)[1],1:121]/MW[,120],8)
+sh <- sh[,-c(119:120)]
+sh1 <- sh[names(res1)]
+sh1$out <- sh$out
+res1$out <- MW$out
+sh2 <- data.frame(stack(sh1))
+sh2a <- sh2[,c(1)]
+m <- c(1:459816)
+sh3 <- cbind.data.frame(sh2a,m)
+colnames(sh3) <- c('shares', 'm')
+
+
+#####################################
+#start of the panel data 
+
+stamp <- rep(c(res[,c(1)]),119)
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189")
+firm <- data.frame(read_excel("firmpy.xlsx"))
+id<- rep(firm$id, each=dim(res)[1])
+hour <- rep(c(24, 1:23), 19159)  
+dayc <- rep(c("Mo", "Tu", "W", "Th", "Fr", "Sa", "Su"),each =24)
+day <-  rep(c(dayc), 2737)
+month <- as.numeric(substring(stamp,4,5))
+year <- as.numeric(substring(stamp,7,10))
+rm(dayc)
+#building market_ids
+time <- rep(c(1:3864),119)
+market_ids <- paste('T',str_pad(time, 5, pad = "0"))
+py1 <- cbind.data.frame(m,id,market_ids, time, hour, day, month, year)
+
+#####################################
+#firms to built product_ids
+
+firm1 <- firm[, -c(1,3)]
+py1a <- merge.data.frame(py1, firm1, by="id")
+product_ids <- paste('F',str_pad(py1a$firm_ids, 2, pad = "0"), 'P', str_pad(py1$id, 3, pad = "0"))
+py2 <- cbind.data.frame(py1, product_ids)
+py3 <- merge(py2, firm1, by="id")
+py4 <- py3%>%select(-1,1)
+setnames(py4, "id", "plant_ids")
+rm(day, hour, market_ids, product_ids, month, stamp, year, time, py1, py2, py1a, firm1)
+
+py5 <- merge(py4, sh3, by="m")
+rm(sh, sh1, sh2, sh2a, sh3, MW, py3,py7b)
+
+
+#####################################
+#adding prices
+
+py5$prices <- rep(CV19d$price,119)
+
+
+#####################################
+#adding loadf
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190")
+lf <- data.frame(read_excel("loadfa_b.xlsx"))
+summary(res)
+res1[is.na(res1)] <- 0
+lfmax <- sapply(res1, max, na.rm = TRUE)
+lf1 <- rbind.data.frame(lf, lfmax)
+lf2 <- sapply(lf1, max, na.rm = TRUE) #comparing max values
+lf3 <- rbind.data.frame(lf1, lf2)
+lf3 <- lf3[-c(1:2),]
+lf4 <- data.frame(round(mapply('/', res1, lf3),8))
+#max(lf4,na.rm = TRUE) #verfying < 1
+lf5<- data.frame(stack(lf4))
+lf6<- lf5[,-c(2)]
+lf7 <- cbind.data.frame(lf6,m)
+colnames(lf7) <- c('loadf', 'm')
+py6 <- merge(py5, lf7, by="m")
+rm(lf, lfmax, lf1, lf2, lf3, lf4, lf5, lf6, lf7, py4)
+
+
+#####################################
+#add fuel costs from inst for random logit
+
+fc <- data.frame(read_excel("Marginalcosts20.xlsm", sheet="Tab1"))
+fc1 <- fc[-c(1:2),-c(1:2)]
+fc2 <- data.frame(stack(fc1))
+fc3 <- fc2[,-c(2)]
+fc4 <- cbind.data.frame(fc3,m)
+colnames(fc4) <- c('fcost', 'm')
+
+py7 <- merge(py6, fc4, by="m")
+rm(fc, fc1, fc2, fc3, fc4)
+
+
+#####################################
+#add CO2 costs from inst for random logit
+
+fco <- data.frame(read_excel("Marginalcosts20.xlsm", sheet="Tab2"))
+fco1 <- fco[-c(1:2),-c(1:2)]
+fco2 <- data.frame(stack(fco1))
+fco3 <- fco2[,-c(2)]
+fco4 <- cbind.data.frame(fco3,m)
+colnames(fco4) <- c('fcoa', 'm')
+py8 <- merge(py7, fco4, by="m")
+rm(fco, fco1, fco2, fco3, fco4, py6)
+
+
+#####################################
+#adding temp
+
+#ddtp <- create_series('2018-12-23' ~ '2020-04-20', '1 hour')
+#write_xlsx(ddtp, "ddtp.xlsx")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189")
+temper <- data.frame(read_excel("temper_all.xlsx"))
+temper[temper == -999] <- NA
+temper2<- temper[-c(1:3, 1:8763),-c(1:3)]
+temper2 <- transform(temper2, chp = rowMeans(temper2[,], na.rm = T))
+temper2$out <- temper2$chp
+temper2[,] <- lapply(temper2[,], round, 1)
+temper3<- data.frame(stack(temper2))
+temper4<- temper3[,-c(2)]
+temper5 <- cbind.data.frame(temper4,m)
+colnames(temper5) <- c('demand_instruments0', 'm')
+py9 <- merge(py8, temper5, by="m")
+rm(temper2, temper3, temper4, temper5,temper, py7)
+
+
+#####################################
+#adding solar
+
+solar <- data.frame(read_excel("solar_all.xlsx"))
+solar[solar == -999] <- NA
+solar2<- solar[-c(1:3,1:8763),-c(1:2)]
+solar2 <- transform(solar2, chp = rowMeans(solar2[,], na.rm = T))
+solar2$out <- solar2$chp
+solar3<- data.frame(stack(solar2))
+solar4<- solar3[,-c(2)]
+solar5 <- cbind.data.frame(solar4,m)
+colnames(solar5) <- c('solar', 'm')
+py91 <- merge(py9, solar5, by="m")
+rm(solar2, solar3, solar4, solar5,solar)
+
+#####################################
+#adding wind
+
+wind <- data.frame(read_excel("wind_all.xlsx"))
+wind[wind == -999] <- NA
+wind2<- wind[-c(1:3,1:8763),-c(1:2)]
+wind2 <- transform(wind2, chp = rowMeans(wind2[,], na.rm = T))
+wind2$out <- wind2$chp
+wind3<- data.frame(stack(wind2))
+wind4<- wind3[,-c(2)]
+wind5 <- cbind.data.frame(wind4,m)
+colnames(wind5) <- c('wind', 'm')
+py92 <- merge(py91, wind5, by="m")
+rm(wind2, wind3, wind4, wind5,wind)
+
+#####################################
+#Adding renewables
+ren <- CV19d$windoff + CV19d$windon + CV19d$windoff
+ren1 <- rep(ren,119)
+ren2 <- cbind.data.frame(m, ren1)
+py93 <- merge(py92, ren2, by="m")
+rm(ren, ren1, ren2)
+
+#Adding demand
+dm <- rep(CV19d[,"demand"],119)
+dm1 <- cbind.data.frame(m, dm)
+py94 <- merge(py93, dm1, by="m")
+rm(dm, dm1, py91, py92)
+
+
+######################################
+#technologies
+names(plants)[names(plants) == 'Gersteinwerk.OCGT'] <- 'Gersteinwerk.CCGT'
+cate1 <- stack(plants)
+colnames(cate1) <- c("nesting_ids", "plant")
+tech <- c("biom","wasser",	"windon", "windoff",	"solar",	"serne",	"kerne",	"braunk",	"steink",	"gasoc",	"pump", "oil", "skonv" ,"gasst", "gascc" , "oiloc", "chp", "out")
+techc <- c(1,       2,         4,        3,         5,        12,        7,        8 ,       9 ,      10,    11,     6     , 13      , 14,      15     , 16  ,    30  , 31)
+techa <- data.frame(tech, techc)
+colnames(techa) <- c("tech", "nesting_ids")
+techb <- merge(cate1, techa, by="nesting_ids")
+firm3 <-firm[,-c(3:4)]
+techc <- merge(firm3, techb, by="plant")
+colnames(techc)[2] <- "plant_ids"
+py10 <- merge(py94, techc, by="plant_ids")
+rm(cate1, techa, techb, techc, firm, firm3, tech)
+
+
+#####################################
+#add instruments for the supply side: fuel prices
+
+rm(m)
+
+attach(py10)
+py10$supply_instruments0[tech=="steink"] <- CV19d$pcoal
+py10$supply_instruments0[tech=="gasoc"] <- CV19d$pcoal
+py10$supply_instruments0[tech=="gasst"] <- CV19d$pcoal
+py10$supply_instruments0[tech=="gascc"] <- CV19d$pcoal
+py10$supply_instruments0[tech=="oil"]   <- CV19d$pcoal
+py10$supply_instruments0[tech=="skonv"] <- CV19d$pcoal
+py10$supply_instruments0[tech=="oiloc"] <- CV19d$pcoal
+detach(py10)
+py10$supply_instruments0[is.na(py10$supply_instruments0)] <- 0
+
+
+
+attach(py10)
+py10$supply_instruments1[tech=="steink"] <- CV19d$pgas
+py10$supply_instruments1[tech=="gasoc"] <- CV19d$pgas
+py10$supply_instruments1[tech=="gasst"] <- CV19d$pgas
+py10$supply_instruments1[tech=="gascc"] <- CV19d$pgas
+py10$supply_instruments1[tech=="oil"]   <- CV19d$pgas
+py10$supply_instruments1[tech=="skonv"] <- CV19d$pgas
+py10$supply_instruments1[tech=="oiloc"] <- CV19d$pgas
+detach(py10)
+py10$supply_instruments1[is.na(py10$supply_instruments1)] <- 0
+
+
+attach(py10)
+py10$supply_instruments2[tech=="steink"] <- CV19d$pcoa
+py10$supply_instruments2[tech=="gasoc"] <- CV19d$pcoa
+py10$supply_instruments2[tech=="gasst"] <- CV19d$pcoa
+py10$supply_instruments2[tech=="gascc"] <- CV19d$pcoa
+py10$supply_instruments2[tech=="oil"]   <- CV19d$pcoa
+py10$supply_instruments2[tech=="skonv"] <- CV19d$pcoa
+py10$supply_instruments2[tech=="oiloc"] <- CV19d$pcoa
+detach(py10)
+py10$supply_instruments2[is.na(py10$supply_instruments2)] <- 0
+
+
+rm(py8, py5, py9, py93, py94)
+
+
+
+#####################################
+#ramping costs 
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190")
+ramp <- data.frame(read_excel("rampchp2_b.xlsx", col_types = c("text",
+                                                               "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                               "numeric"
+                                                               
+                                                               
+)))
+
+
+ramp1 <- ramp[-c(1:2), c(3:121)]
+ramp2 <- data.frame(stack(ramp1))
+ramp3 <- ramp2[, c(2,1)]
+m <- c(1:459816)
+ramp4 <- cbind.data.frame(ramp3, m)
+ramp4 <- ramp4[,-c(1)]
+rm(ramp1, ramp2,ramp3)
+
+##renaming
+colnames(ramp4) <- c( "rampc", "m")
+
+py11 <- merge(py10, ramp4, by="m")
+
+
+py12 <- py11%>%select(-plant_ids,plant_ids)
+rm( py10)
+
+py13 <- py12%>%select(-m,m)
+
+###################################################################################
+#cleaning nas
+# N=431755 from a total of 456960 after cleaning for blank periods
+pyclean <- na.omit(py13)
+
+
+#################################################################################
+#VERIFICATIONS --
+
+#sum of shares in the market less than 1 
+#N=427941
+vff <- with(pyclean, subset(pyclean, plant_ids>=1 & plant_ids<128))
+
+summary(py13)
+
+#taking out shares close equal to 0 or 1: N=247924
+#N=247924/427941, loss of 42% of data
+vf <- with(vff, subset(vff, shares>0 & shares<0.999))
+
+#taking out periods where the the total sum of shares is 1:
+Summary <- aggregate(vf$shares, by=list(time=vf$time), FUN=sum)
+
+#N= 126 markets that sum higher than  0.99 in shares
+check <- with(Summary, subset(Summary,  x>=0.999))
+
+#N= 0 markets that sum 0 in shares
+check2 <- with(Summary, subset(Summary,  x<=0))
+b <- c(check$time)
+d <- c(check2$time)
+
+#final total N= 1080628, 1080628/1723864, total final loss of 0.37 data
+vf1 <- vf[!vf$time %in% b, ]
+vf2v <- vf1[!vf1$time %in% d, ]
+
+Summary2 <- aggregate(vf2v$shares, by=list(time=vf2v$time), FUN=sum)
+
+check3 <- with(Summary2, subset(Summary2, x>=0.999))#should be zero
+rm(check, check2, Summary, check3)
+
+#cheecking NAs in final dataset vf2
+sum(apply(vf2v, 1, anyNA))
+
+rm(pyclean, vf, vf1, vff)
+rm(b,d)
+
+write_xlsx(Summary2, "sharesl_b.xlsx") #shares that we are using in T markets
+
+
+#EXPORT TO CVS USE IN PYTHON
+rm(id, m)
+attach(vf2v)
+vf2v$period[4<=month & month<=9] <- "Summer"
+vf2v$period[1<=month & month<=3] <- "Winter"
+vf2v$period[10<=month & month<=12] <- "Winter"
+detach(vf2v)
+
+
+attach(vf2v)
+vf2v$block[6<=hour & hour<=9] <- "peak1"
+vf2v$block[13<=hour & hour<=16] <- "peak2"
+vf2v$block[20<=hour & hour<=21] <- "off"
+vf2v$block[10<=hour & hour<=12] <- "peak1"
+vf2v$block[17<=hour & hour<=19] <- "peak2"
+vf2v$block[1<=hour & hour<=5] <- "off"
+vf2v$block[22<=hour & hour<=24] <- "off"
+detach(vf2v)
+
+vf2v <- cbind(vf2v, dummy(vf2v$block, sep = "_"))
+
+attach(vf2v)
+vf2v$week[day=="Mo" | day=="Tu" | day=="W" | day=="Th" | day=="Fr" ] <- "work"
+vf2v$week[day=="Sa" | day=="Su" ] <- "end"
+detach(vf2v)
+
+#ZD:temp, ZS: international fuel prices plus co2 prices. Taking out plant names, nesting ids, extra m to run python
+vf3 <- vf2v[,-c(19:20,27)]
+
+write.csv(vf3, file="20190_b.cvs")
+#b <-read.csv("201819_a.cvs")
+
+
+save(vf3, file = "Data20190.RData")
+# To load the data again
+#load("Data20189.RData")
+#save.image(file = "my_work_CV19_uno.RData")
+#load("my_work_CV19_uno.RData")
+rm(plants, py11, py12, ramp, ramp4, Summary2, res, res1, vf2v, py13)
+
+
+#############################################################################################
+#PANEL DATA CONSTRUCTION FOR PYTHON PYPBLP - END2
+
+
+#TABLES & RESULTS RAMPING REQUIREMENTS:- START
+#############################################################################################
+
+#Tables 2 and 3
+Table_2 <- with(vf2, subset(vf2, time < 1873))
+Table_3 <- with(vf2, subset(vf2, time >= 1873))
+
+write.csv(stat.desc(Table_2), "Table2.csv")
+write.csv(stat.desc(Table_3), "Table3.csv")
+
+rm(Table_2, Table_3)
+
+
+Table_4 <- with(vf3, subset(vf3, time < 1897))
+Table_5 <- with(vf3, subset(vf3, time >= 1897))
+
+write.csv(stat.desc(Table_4), "Table4.csv")
+write.csv(stat.desc(Table_5), "Table5.csv")
+
+rm(Table_4, Table_5)
+
+
+#4. Results
+night <- apply(ducks[c(1:5, 20:24),-c(1)],2,min)
+afternoon <- apply(ducks[c(14:20),-c(1)],2,min)
+
+#ramping, first difference
+ducks1 <- tail(ducks, -1) - head(ducks, -1)
+
+#Panel A am/pm
+ramp.am <- colSums(ducks1[c(4:6),])
+increaseA <- ramp.am[3] - ramp.am[2]
+meanA <- mean(ramp.am[2:3])
+
+ramp.pm <- colSums(ducks1[c(16:18),])
+increaseA.pm <- abs(ramp.pm[3] - ramp.pm[2])
+meanA.pm <- mean(ramp.pm[2:3])
+
+#Panel B am/pm
+increaseB <- ramp.am[5] - ramp.am[4]
+meanB <- mean(ramp.am[4:5])
+increaseB.pm <- abs(ramp.pm[5] - ramp.pm[4])
+meanB.pm <- mean(ramp.pm[4:5])
+
+#percentage points
+pp.am <- ((ramp.am[5] -ramp.am[4])/ramp.am[4]) - ((ramp.am[3] -ramp.am[2])/ramp.am[2])
+pp.pm <- ((ramp.pm[5] -ramp.pm[4])/ramp.pm[4]) - ((ramp.pm[3] -ramp.pm[2])/ramp.pm[2])
+
+rm(afternoon, increaseA, increaseA.pm, increaseB, increaseB.pm, meanA, meanA.pm, meanB, meanB.pm, night, pp.am, pp.pm, ramp.am, ramp.pm)
+
+#############################################################################################
+#TABLES & RESULTS RAMPING REQUIREMENTS: - END
+
+
+
+#POST-PROCESSING AFTER PYTHON - GRAPHS START
+############################################################################################
+#Pass-through, welfare and CO2 emissions - Figures 6, 7, 8, 9, 10
+############################################################################################
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\All") 
+
+#Pt - fuel costs
+#Figure 6
+
+library(readxl)
+pt <- data.frame(read_excel("res_demand_response.xlsx")) 
+pt <- pt[-c(1)]
+
+ptfuel<- subset(pt, pt$Type=="fcost")
+
+ptfuel2 <- ptfuel[ which( ptfuel$Period =="2019a" | ptfuel$Period == "2020a") , ]
+ptfuel3 <- ptfuel[ which( ptfuel$Period =="2019b" | ptfuel$Period == "2020b") , ]
+
+#4.1 Fuel pass-through results
+pt_2020A <- ptfuel2  %>% group_by(Period)  %>% 
+  summarise(mean=mean(coeff))
+pt_2020B <- ptfuel3  %>% group_by(Period)  %>% 
+  summarise(mean=mean(coeff))
+PP_fuel <- (((pt_2020B[2,2] - pt_2020B[1,2])/pt_2020B[1,2]) - ((pt_2020A[2,2] - pt_2020A[1,2])/pt_2020A[1,2]))*100 
+
+
+d <- c(0.5,0.5)
+d1 <- c("2019a" ="grey28", "2020a" ="red")
+d2 <- c("2019b" ="grey28", "2020b" ="red")
+
+graphfa <- ggplot(ptfuel2, aes(x=Block, y=coeff, fill=Period))+
+  geom_bar(stat = "identity", color="black",
+           position =position_dodge(),  width = d)+
+  geom_errorbar(aes(x=Block, ymin=coeff-se, ymax=coeff+se), width=0.2,
+                position=position_dodge(0.5))+
+  coord_cartesian(ylim=c(0,1.8))+
+  scale_fill_manual("legend", values = d1)+
+  geom_text(aes(label=n), position=position_dodge(width=0.5), vjust=-3, size=3)+
+  labs(title="Panel A: 23.12 - 10.03 ", x = "Block",
+       y = "Fuel pass through")+
+  theme(legend.position = c(0.25, 0.95),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))
+
+
+
+graphfa
+
+
+graphfb <- ggplot(ptfuel3, aes(x=Block, y=coeff, fill=Period))+
+  geom_bar(stat = "identity", color="black",
+           position =position_dodge(),  width = d)+
+  geom_errorbar(aes(x=Block, ymin=coeff-se, ymax=coeff+se), width=0.2,
+                position=position_dodge(0.5))+
+  coord_cartesian(ylim=c(0,1.8))+
+  geom_text(aes(label=n), position=position_dodge(width=0.5), vjust=-3, size=3)+
+  labs(title="Panel B: 11.03 - 31.05 ", x = "Block",
+       y = "Fuel pass through")+
+  theme(legend.position = c(0.25, 0.95),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))+
+  scale_fill_manual("legend", values = d2)
+
+
+graphfb
+
+pt_fuel <- grid.arrange(graphfa, graphfb, ncol= 2)
+
+rm(ptfuel2, ptfuel3, ptfuel)
+rm(d, d1, d2)
+
+
+
+pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\All\\pt_fuel.pdf",  
+    width = 10, 
+    height = 4.5) 
+plot(pt_fuel)
+dev.off()
+
+
+#Figure 7
+#Pt- CO2
+
+ptCO2<- subset(pt, pt$Type=="co2")
+ptCO22 <- ptCO2[ which( ptCO2$Period =="2019a" | ptCO2$Period == "2020a") , ]
+ptCO23 <- ptCO2[ which( ptCO2$Period =="2019b" | ptCO2$Period == "2020b") , ]
+
+#4.1 CO2 pass-through results
+ptc_2020A <- ptCO22  %>% group_by(Period)  %>% 
+  summarise(mean=mean(coeff))
+ptc_2020B <- ptCO23  %>% group_by(Period)  %>% 
+  summarise(mean=mean(coeff))
+PP_CO2 <- (((ptc_2020B[2,2] - ptc_2020B[1,2])/ptc_2020B[1,2]) - ((ptc_2020A[2,2] - ptc_2020A[1,2])/ptc_2020A[1,2]))*100 
+
+
+
+d <- c(0.5,0.5)
+d1 <- c("2019a" ="grey28", "2020a" ="red")
+d2 <- c("2019b" ="grey28", "2020b" ="red")
+
+graphfa <- ggplot(ptCO22, aes(x=Block, y=coeff, fill=Period))+
+  geom_bar(stat = "identity", color="black",
+           position =position_dodge(),  width = d)+
+  geom_errorbar(aes(x=Block, ymin=coeff-se, ymax=coeff+se), width=0.2,
+                position=position_dodge(0.5))+
+  coord_cartesian(ylim=c(0,1.8))+
+  scale_fill_manual("legend", values = d1)+
+  geom_text(aes(label=n), position=position_dodge(width=0.5), vjust=-3, size=3)+
+  labs(title="Panel A: 23.12 - 10.03 ", x = "Block",
+       y = "CO2 pass through")+
+  theme(legend.position = c(0.25, 0.95),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))
+
+
+
+graphfa
+
+
+graphfb <- ggplot(ptCO23, aes(x=Block, y=coeff, fill=Period))+
+  geom_bar(stat = "identity", color="black",
+           position =position_dodge(),  width = 0.4)+
+  geom_errorbar(aes(x=Block, ymin=coeff-se, ymax=coeff+se), width=0.2,
+                position=position_dodge(0.5))+
+  coord_cartesian(ylim=c(0,1.8))+
+  geom_text(aes(label=n), position=position_dodge(width=0.5), vjust=-3, size=3)+
+  labs(title="Panel B: 11.03 - 31.05", x = "Block",
+       y = "CO2 pass through")+
+  theme(legend.position = c(0.25, 0.95),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))+
+  scale_fill_manual("legend", values = d2)
+
+
+graphfb
+
+pt_CO2 <- grid.arrange(graphfa, graphfb, ncol= 2)
+
+
+pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\All\\pt_CO2.pdf",  
+    width = 10, 
+    height = 4.5) 
+plot(pt_CO2)
+dev.off()
+
+
+
+#Figure 8
+#Pt - Total 
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\Total") 
+
+library(readxl)
+pt <- data.frame(read_excel("rest_demand_response.xlsx")) 
+pt <- pt[-c(1)]
+
+
+ptTot<- subset(pt, pt$Type=="tc")
+
+ptTot2 <- ptTot[ which( ptTot$Period =="2019a" | ptTot$Period == "2020a") , ]
+ptTot3 <- ptTot[ which( ptTot$Period =="2019b" | ptTot$Period == "2020b") , ]
+
+#4.1 total pass-through results
+ptt_2020A <- ptTot2  %>% group_by(Period)  %>% 
+  summarise(mean=mean(coeff))
+ptt_2020B <- ptTot3  %>% group_by(Period)  %>% 
+  summarise(mean=mean(coeff))
+PP_total <- (((ptt_2020B[2,2] - ptt_2020B[1,2])/ptt_2020B[1,2]) - ((ptt_2020A[2,2] - ptt_2020A[1,2])/ptt_2020A[1,2]))*100 
+
+
+
+
+#Gathering all pass-through results for section 4.1
+work_book <- createWorkbook()
+addWorksheet(work_book, sheetName="pt_2020A")
+writeData(work_book, "pt_2020A", pt_2020A)
+addWorksheet(work_book, sheetName="pt_2020B")
+writeData(work_book, "pt_2020B", pt_2020B)
+addWorksheet(work_book, sheetName="pp_fuel")
+writeData(work_book, "pp_fuel", PP_fuel)
+addWorksheet(work_book, sheetName="ptc_2020A")
+writeData(work_book, "ptc_2020A", ptc_2020A)
+addWorksheet(work_book, sheetName="ptc_2020B")
+writeData(work_book, "ptc_2020B", ptc_2020B)
+addWorksheet(work_book, sheetName="pp_CO2")
+writeData(work_book, "pp_CO2", PP_CO2)
+addWorksheet(work_book, sheetName="ptt_2020A")
+writeData(work_book, "ptt_2020A", ptt_2020A)
+addWorksheet(work_book, sheetName="ptt_2020B")
+writeData(work_book, "ptt_2020B", ptt_2020B)
+addWorksheet(work_book, sheetName="pp_total")
+writeData(work_book, "pp_total", PP_total)
+saveWorkbook(work_book, "pass-through.xlsx")
+
+rm(pt_2020A,pt_2020B,ptc_2020A,ptc_2020B,ptt_2020A,ptt_2020B, PP_CO2, PP_fuel, PP_total)
+rm(work_book)
+
+d <- c(0.5,0.5)
+d1 <- c("2019a" ="grey28", "2020a" ="red")
+d2 <- c("2019b" ="grey28", "2020b" ="red")
+
+graphfa <- ggplot(ptTot2, aes(x=Block, y=coeff, fill=Period))+
+  geom_bar(stat = "identity", color="black",
+           position =position_dodge(),  width = d)+
+  geom_errorbar(aes(x=Block, ymin=coeff-se, ymax=coeff+se), width=0.2,
+                position=position_dodge(0.5))+
+  coord_cartesian(ylim=c(0,1.8))+
+  scale_fill_manual("legend", values = d1)+
+  geom_text(aes(label=n), position=position_dodge(width=0.5), vjust=-3, size=3)+
+  labs(title="Panel A: 23.12 - 10.03 ", x = "Block",
+       y = "Total pass through")+
+  theme(legend.position = c(0.25, 0.95),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))
+
+
+
+graphfa
+
+
+graphfb <- ggplot(ptTot3, aes(x=Block, y=coeff, fill=Period))+
+  geom_bar(stat = "identity", color="black",
+           position =position_dodge(),  width = d)+
+  geom_errorbar(aes(x=Block, ymin=coeff-se, ymax=coeff+se), width=0.2,
+                position=position_dodge(0.5))+
+  coord_cartesian(ylim=c(0,1.8))+
+  geom_text(aes(label=n), position=position_dodge(width=0.5), vjust=-3, size=3)+
+  labs(title="Panel B: 11.03- 31.05", x = "Block",
+       y = "Total pass through")+
+  theme(legend.position = c(0.25, 0.95),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))+
+  scale_fill_manual("legend", values = d2)
+
+
+graphfb
+
+pt_total <- grid.arrange(graphfa, graphfb, ncol= 2)
+
+pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\Total\\pt_total.pdf",  
+    width = 10, 
+    height = 4.5) 
+plot(pt_fuel)
+dev.off()
+
+
+
+
+
+############################################################################################
+#TOTAL welfare - Figure 9
+############################################################################################
+
+
+remove(list = ls())
+
+#2019a
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\off\\tc") 
+w19aoff <- read.csv(file = 'icps1_o.csv')
+colnames(w19aoff) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a") 
+t19aoff <- read.csv(file = '19aoff.csv')
+t19aoff <- t19aoff[,-c(1)]
+tw19aoff <- cbind.data.frame(t19aoff,w19aoff)
+rm(t19aoff, w19aoff)
+
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p1\\tc") 
+w19ap1 <- read.csv(file = 'icps1_o.csv')
+colnames(w19ap1) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a") 
+t19ap1 <- read.csv(file = '19ap1.csv')
+t19ap1 <- t19ap1[,-c(1)]
+tw19ap1 <- cbind.data.frame(t19ap1,w19ap1)
+rm(t19ap1, w19ap1)
+
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p2\\tc") 
+w19ap2 <- read.csv(file = 'icps1_o.csv')
+colnames(w19ap2) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a") 
+t19ap2 <- read.csv(file = '19ap2.csv')
+t19ap2 <- t19ap2[,-c(1)]
+tw19ap2 <- cbind.data.frame(t19ap2,w19ap2)
+rm(t19ap2, w19ap2)
+
+
+#2019b
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\off\\tc") 
+w19boff <- read.csv(file = 'icps1_o.csv')
+colnames(w19boff) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b") 
+t19boff <- read.csv(file = '19boff.csv')
+t19boff <- t19boff[,-c(1)]
+tw19boff <- cbind.data.frame(t19boff,w19boff)
+rm(t19boff, w19boff)
+
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p1\\tc") 
+w19bp1 <- read.csv(file = 'icps1_o.csv')
+colnames(w19bp1) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b") 
+t19bp1 <- read.csv(file = '19bp1.csv')
+t19bp1 <- t19bp1[,-c(1)]
+tw19bp1 <- cbind.data.frame(t19bp1,w19bp1)
+rm(t19bp1, w19bp1)
+
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p2\\tc") 
+w19bp2 <- read.csv(file = 'icps1_o.csv')
+colnames(w19bp2) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b") 
+t19bp2 <- read.csv(file = '19bp2.csv')
+t19bp2 <- t19bp2[,-c(1)]
+tw19bp2 <- cbind.data.frame(t19bp2,w19bp2)
+rm(t19bp2, w19bp2)
+
+
+#2020a
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\off\\tc") 
+w20aoff <- read.csv(file = 'icps1_o.csv')
+colnames(w20aoff) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a") 
+t20aoff <- read.csv(file = '20aoff.csv')
+t20aoff <- t20aoff[,-c(1)]
+tw20aoff <- cbind.data.frame(t20aoff,w20aoff)
+rm(t20aoff, w20aoff)
+
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p1\\tc") 
+w20ap1 <- read.csv(file = 'icps1_o.csv')
+colnames(w20ap1) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a") 
+t20ap1 <- read.csv(file = '20ap1.csv')
+t20ap1 <- t20ap1[,-c(1)]
+tw20ap1 <- cbind.data.frame(t20ap1,w20ap1)
+rm(t20ap1, w20ap1)
+
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p2\\tc") 
+w20ap2 <- read.csv(file = 'icps1_o.csv')
+colnames(w20ap2) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a") 
+t20ap2 <- read.csv(file = '20ap2.csv')
+t20ap2 <- t20ap2[,-c(1)]
+tw20ap2 <- cbind.data.frame(t20ap2,w20ap2)
+rm(t20ap2, w20ap2)
+
+
+
+#2020b
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\off\\tc") 
+w20boff <- read.csv(file = 'icps1_o.csv')
+colnames(w20boff) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b") 
+t20boff <- read.csv(file = '20boff.csv')
+t20boff <- t20boff[,-c(1)]
+tw20boff <- cbind.data.frame(t20boff,w20boff)
+rm(t20boff, w20boff)
+
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p1\\tc") 
+w20bp1 <- read.csv(file = 'icps1_o.csv')
+colnames(w20bp1) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b") 
+t20bp1 <- read.csv(file = '20bp1.csv')
+t20bp1 <- t20bp1[,-c(1)]
+tw20bp1 <- cbind.data.frame(t20bp1,w20bp1)
+rm(t20bp1, w20bp1)
+
+
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p2\\tc") 
+w20bp2 <- read.csv(file = 'icps1_o.csv')
+colnames(w20bp2) <-c("ps", "cs")
+setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b") 
+t20bp2 <- read.csv(file = '20bp2.csv')
+t20bp2 <- t20bp2[,-c(1)]
+tw20bp2 <- cbind.data.frame(t20bp2,w20bp2)
+rm(t20bp2, w20bp2)
+
+#############################################
+#consumer surplus
+tw19aoffsub<- tw19aoff[,c("market_ids", "hour")]
+cs19aoff <- as.data.frame(unique(tw19aoffsub[,c("market_ids", "hour")]))
+cs1 <- data.frame(tw19aoff$cs)
+cs1 <- cs1[!is.na(cs1$tw19aoff.cs),]
+cs19aoff <- cbind.data.frame(cs19aoff, cs1)
+colnames(cs19aoff) <-c("market_ids", "hour", "cs")
+cs19aoff$id <- '2019a'
+
+tw19ap1sub<- tw19ap1[,c("market_ids", "hour")]
+cs19ap1 <- as.data.frame(unique(tw19ap1sub[,c("market_ids", "hour")]))
+cs2 <- data.frame(tw19ap1$cs)
+cs2 <- cs2[!is.na(cs2$tw19ap1.cs),]
+cs19ap1 <- cbind.data.frame(cs19ap1, cs2)
+colnames(cs19ap1) <-c("market_ids", "hour", "cs")
+cs19ap1$id <- '2019a'
+
+
+tw19ap2sub<- tw19ap2[,c("market_ids", "hour")]
+cs19ap2 <- as.data.frame(unique(tw19ap2sub[,c("market_ids", "hour")]))
+cs3 <- data.frame(tw19ap2$cs)
+cs3 <- cs3[!is.na(cs3$tw19ap2.cs),]
+cs19ap2 <- cbind.data.frame(cs19ap2, cs3)
+colnames(cs19ap2) <-c("market_ids", "hour", "cs")
+cs19ap2$id <- '2019a'
+
+
+tw19boffsub<- tw19boff[,c("market_ids", "hour")]
+cs19boff <- as.data.frame(unique(tw19boffsub[,c("market_ids", "hour")]))
+cs4 <- data.frame(tw19boff$cs)
+cs4 <- cs4[!is.na(cs4$tw19boff.cs),]
+cs19boff <- cbind.data.frame(cs19boff, cs4)
+colnames(cs19boff) <-c("market_ids", "hour", "cs")
+cs19boff$id <- '2019b'
+
+tw19bp1sub<- tw19bp1[,c("market_ids", "hour")]
+cs19bp1 <- as.data.frame(unique(tw19bp1sub[,c("market_ids", "hour")]))
+cs5 <- data.frame(tw19bp1$cs)
+cs5 <- cs5[!is.na(cs5$tw19bp1.cs),]
+cs19bp1 <- cbind.data.frame(cs19bp1, cs5)
+colnames(cs19bp1) <-c("market_ids", "hour", "cs")
+cs19bp1$id <- '2019b'
+
+
+tw19bp2sub<- tw19bp2[,c("market_ids", "hour")]
+cs19bp2 <- as.data.frame(unique(tw19bp2sub[,c("market_ids", "hour")]))
+cs6 <- data.frame(tw19bp2$cs)
+cs6 <- cs6[!is.na(cs6$tw19bp2.cs),]
+cs19bp2 <- cbind.data.frame(cs19bp2, cs6)
+colnames(cs19bp2) <-c("market_ids", "hour", "cs")
+cs19bp2$id <- '2019b'
+
+
+tw20aoffsub<- tw20aoff[,c("market_ids", "hour")]
+cs20aoff <- as.data.frame(unique(tw20aoffsub[,c("market_ids", "hour")]))
+cs7 <- data.frame(tw20aoff$cs)
+cs7 <- cs7[!is.na(cs7$tw20aoff.cs),]
+cs20aoff <- cbind.data.frame(cs20aoff, cs7)
+colnames(cs20aoff) <-c("market_ids", "hour", "cs")
+cs20aoff$id <- '2020a'
+
+tw20ap1sub<- tw20ap1[,c("market_ids", "hour")]
+cs20ap1 <- as.data.frame(unique(tw20ap1sub[,c("market_ids", "hour")]))
+cs8 <- data.frame(tw20ap1$cs)
+cs8 <- cs8[!is.na(cs8$tw20ap1.cs),]
+cs20ap1 <- cbind.data.frame(cs20ap1, cs8)
+colnames(cs20ap1) <-c("market_ids", "hour", "cs")
+cs20ap1$id <- '2020a'
+
+
+tw20ap2sub<- tw20ap2[,c("market_ids", "hour")]
+cs20ap2 <- as.data.frame(unique(tw20ap2sub[,c("market_ids", "hour")]))
+cs9 <- data.frame(tw20ap2$cs)
+cs9 <- cs9[!is.na(cs9$tw20ap2.cs),]
+cs20ap2 <- cbind.data.frame(cs20ap2, cs9)
+colnames(cs20ap2) <-c("market_ids", "hour", "cs")
+cs20ap2$id <- '2020a'
+
+
+
+tw20boffsub<- tw20boff[,c("market_ids", "hour")]
+cs20boff <- as.data.frame(unique(tw20boffsub[,c("market_ids", "hour")]))
+cs10 <- data.frame(tw20boff$cs)
+cs10 <- cs10[!is.na(cs10$tw20boff.cs),]
+cs20boff <- cbind.data.frame(cs20boff, cs10)
+colnames(cs20boff) <-c("market_ids", "hour", "cs")
+cs20boff$id <- '2020b'
+
+tw20bp1sub<- tw20bp1[,c("market_ids", "hour")]
+cs20bp1 <- as.data.frame(unique(tw20bp1sub[,c("market_ids", "hour")]))
+cs11 <- data.frame(tw20bp1$cs)
+cs11 <- cs11[!is.na(cs11$tw20bp1.cs),]
+cs20bp1 <- cbind.data.frame(cs20bp1, cs11)
+colnames(cs20bp1) <-c("market_ids", "hour", "cs")
+cs20bp1$id <- '2020b'
+
+
+tw20bp2sub<- tw20bp2[,c("market_ids", "hour")]
+cs20bp2 <- as.data.frame(unique(tw20bp2sub[,c("market_ids", "hour")]))
+cs12 <- data.frame(tw20bp2$cs)
+cs12 <- cs12[!is.na(cs12$tw20bp2.cs),]
+cs20bp2 <- cbind.data.frame(cs20bp2, cs12)
+colnames(cs20bp2) <-c("market_ids", "hour", "cs")
+cs20bp2$id <- '2020b'
+
+
+cs <- rbind.data.frame(cs19aoff, cs19ap1, cs19ap2, cs19boff, cs19bp1, cs19bp2, cs20aoff, cs20ap1, cs20ap2, cs20boff, cs20bp1, cs20bp2)
+rm(cs19aoff, cs19ap1, cs19ap2, cs19boff, cs19bp1, cs19bp2, cs20aoff, cs20ap1, cs20ap2, cs20boff, cs20bp1, cs20bp2)
+rm(cs1, cs2, cs3, cs4, cs5, cs6, cs7, cs8, cs9, cs10, cs11, cs12)
+rm(tw19aoffsub, tw19ap1sub, tw19ap2sub, tw19boffsub, tw19bp1sub, tw19bp2sub, tw20aoffsub, tw20ap1sub, tw20ap2sub, tw20boffsub, tw20bp1sub, tw20bp2sub)
+
+cs[,3] <- log(cs[,3])
+
+cs1 <- cs[which(cs$id=="2019a"),]
+cs2 <- aggregate(cs1[,3],  by = list(cs1[,2]),FUN=mean)
+colnames(cs2) <-c("hour", "cs19")
+
+cs1b <- cs[which(cs$id=="2019b"),]
+cs2b <- aggregate(cs1b[,3],  by = list(cs1b[,2]),FUN=mean)
+colnames(cs2b) <-c("hour", "cs19")
+
+cs1c <- cs[which(cs$id=="2020a"),]
+cs2c <- aggregate(cs1c[,3],  by = list(cs1c[,2]),FUN=mean)
+colnames(cs2c) <-c("hour", "cs20")
+
+cs1d <- cs[which(cs$id=="2020b"),]
+cs2d <- aggregate(cs1d[,3],  by = list(cs1d[,2]),FUN=mean)
+colnames(cs2d) <-c("hour", "cs20")
+
+cs2019a <- merge.data.frame(cs2, cs2c)
+cs2020b <- merge.data.frame(cs2b, cs2d)
+
+rm(cs,cs1,cs1b,cs1c,cs1d, cs2, cs2b, cs2c, cs2d)
+
+#############################################
+#Producer surplus
+tw19aoff <- tw19aoff[, -c(32)]
+tw19aoff$id <- '2019a'
+tw19ap1 <- tw19ap1[, -c(32)]
+tw19ap1$id <- '2019a'
+tw19ap2 <- tw19ap2[, -c(32)]
+tw19ap2$id <- '2019a'
+tw19boff <- tw19boff[, -c(32)]
+tw19boff$id <- '2019b'
+tw19bp1 <- tw19bp1[, -c(32)]
+tw19bp1$id <- '2019b'
+tw19bp2 <- tw19bp2[, -c(32)]
+tw19bp2$id <- '2019b'
+tw20aoff <- tw20aoff[, -c(32)]
+tw20aoff$id <- '2020a'
+tw20ap1 <- tw20ap1[, -c(32)]
+tw20ap1$id <- '2020a'
+tw20ap2 <- tw20ap2[, -c(32)]
+tw20ap2$id <- '2020a'
+tw20boff <- tw20boff[, -c(32)]
+tw20boff$id <- '2020b'
+tw20bp1 <- tw20bp1[, -c(32)]
+tw20bp1$id <- '2020b'
+tw20bp2 <- tw20bp2[, -c(32)]
+tw20bp2$id <- '2020b'
+
+ps <- rbind.data.frame(tw19aoff, tw19ap1, tw19ap2, tw19boff, tw19bp1, tw19bp2, tw20aoff, tw20ap1, tw20ap2, tw20boff, tw20bp1, tw20bp2)
+rm(tw19aoff, tw19ap1, tw19ap2, tw19boff, tw19bp1, tw19bp2, tw20aoff, tw20ap1, tw20ap2, tw20boff, tw20bp1, tw20bp2)
+
+
+ps[,31] <- log(ps[,31])
+
+ps1 <- ps[which(ps$id=="2019a"),]
+ps2 <- aggregate(ps1[,31],  by = list(ps1[,3]),FUN=mean)
+colnames(ps2) <-c("hour", "ps19")
+
+ps1b <- ps[which(ps$id=="2019b"),]
+ps2b <- aggregate(ps1b[,31],  by = list(ps1b[,3]),FUN=mean)
+colnames(ps2b) <-c("hour", "ps19")
+
+ps1c <- ps[which(ps$id=="2020a"),]
+ps2c <- aggregate(ps1c[,31],  by = list(ps1c[,3]),FUN=mean)
+colnames(ps2c) <-c("hour", "ps20")
+
+ps1d <- ps[which(ps$id=="2020b"),]
+ps2d <- aggregate(ps1d[,31],  by = list(ps1d[,3]),FUN=mean)
+colnames(ps2d) <-c("hour", "ps20")
+
+ps2019a <- merge.data.frame(ps2, ps2c)
+ps2020b <- merge.data.frame(ps2b, ps2d)
+
+rm(ps,ps1,ps1b,ps1c,ps1d, ps2, ps2b, ps2c, ps2d)
+
+summary(cs2019a)
+summary(ps2019a)
+summary(cs2020a)
+summary(ps2020b)
+
+a <- merge.data.frame(cs2019a, ps2019a)
+b <- merge.data.frame(cs2020b, ps2020b)
+
+
+a$dif1 <- a$cs19 - a$ps19
+a$dif2 <- a$cs20 - a$ps20
+a$dif <- (a$dif1+a$dif2)/2
+
+summary(a) # mean 9.146
+
+
+b$dif1 <- b$cs19 - b$ps19
+b$dif2 <- b$cs20 - b$ps20
+b$dif <- (b$dif1+b$dif2)/2
+
+summary(b) # mean 5.589
+
+
+setwd("C:/Users/glori/Documents/Papers_202005/4_Paper_short/Replication/Py/All")
+
+write_xlsx(a, "welfA.xlsx") 
+write_xlsx(b, "welfB.xlsx") 
+#reduccion in distributional gap: (5.859-9.146)/9.146 = -36% 
+
+#consumer
+csd <- data.frame(a$hour) 
+csd$csA <- (a$cs20-a$cs19)/a$cs19 
+csd$csB <- (b$cs20-b$cs19)/b$cs19
+csd$pp <- csd$csB - csd$csA # losses post-COVID-19
+summary(csd) 
+ppm_cs <- mean(csd$csB - csd$csA)
+
+#producer
+psd <- data.frame(a$hour) 
+psd$psA <- (a$ps20-a$ps19)/a$ps19 
+psd$psB <- (b$ps20-b$ps19)/b$ps19
+psd$pp <- psd$psB - psd$psA # losses post-COVID-19
+summary(psd) 
+ppm_ps <- mean(psd$psB - psd$psA)
+
+#Gathering all welfare results for section 4.2
+work_book2 <- createWorkbook()
+addWorksheet(work_book2, sheetName="csd")
+writeData(work_book2, "csd", csd)
+addWorksheet(work_book2, sheetName="ppm_cs")
+writeData(work_book2, "ppm_cs", ppm_cs)
+addWorksheet(work_book2, sheetName="psd")
+writeData(work_book2, "psd", psd)
+addWorksheet(work_book2, sheetName="ppm_ps")
+writeData(work_book2, "ppm_ps", ppm_ps)
+saveWorkbook(work_book2, "welfsect4_2.xlsx")
+
+
+rm(csd,psd, ppm_cs, ppm_ps)
+rm(work_book2)
+
+
+rm(cs2019a, cs2020b, ps2019a, ps2020b)
+
+graphcsa <- ggplot(a, aes(x=hour)) + 
+  geom_line(aes(y = cs19, color = "cs19"), size=1) + 
+  geom_line(aes(y = cs20, color="cs20"), size=1 )+
+  geom_line(aes(y = ps19, color = "ps19"), size=1) + 
+  geom_line(aes(y = ps20, color="ps20"), size=1 )+
+  scale_colour_manual("", 
+                      values = c("cs19"="black", "cs20"="red", "ps19"="grey50", "ps20"="indianred2" )) +
+  theme_bw()+
+  labs(title="Panel A: 23.12 - 10.03 ", x = "Hour",
+       y = "Ln(euro)",
+       color = "Legend")+ 
+  scale_x_continuous(breaks = c(1,6,13,20,24))+ 
+  scale_y_continuous(limits = c(-9,9))+ 
+  theme(legend.position = c(0.35, 0.05),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))
+
+graphcsa
+
+
+graphcsb <- ggplot(b, aes(x=hour)) + 
+  geom_line(aes(y = cs19, color = "cs19"), size=1) + 
+  geom_line(aes(y = cs20, color="cs20"), size=1 )+
+  geom_line(aes(y = ps19, color = "ps19"), size=1) + 
+  geom_line(aes(y = ps20, color="ps20"), size=1 )+
+  scale_colour_manual("", 
+                      values = c("cs19"="black", "cs20"="red", "ps19"="grey50", "ps20"="indianred2" )) +
+  theme_bw()+
+  labs(title="Panel A: 11.03 - 31.05 ", x = "Hour",
+       y = "Ln(euro)",
+       color = "Legend")+ 
+  scale_x_continuous(breaks = c(1,6,13,20,24))+ 
+  scale_y_continuous(limits = c(-9,9))+ 
+  theme(legend.position = c(0.35, 0.05),
+        legend.direction = "horizontal", legend.title = element_blank(),legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))
+
+graphcsb
+
+t_welf <- grid.arrange(graphcsa, graphcsb, ncol= 2)
+
+
+pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\Total\\t_welf.pdf",  
+    width = 10, 
+    height = 4.5) 
+plot(t_welf)
+dev.off()
+
+rm(graphcsa, graphcsb)
+
+
+############################################################################################
+#CO2 emissions - figure 10
+############################################################################################
+
+
+c2019sub <- CV19c[, c("lignite", "coal", "gas", "skonv")]
+emissions <- c(0.4, 0.34, 0.2, 0.27)
+c2019 <- sweep(c2019sub, 2, emissions, FUN="*")
+c2019$time <- c(1:3840)
+c2019$date <- CV19c$date
+c2019$hour <- as.numeric(substring(c2019$date,12,13))
+
+
+attach(c2019)
+c2019$block[6<=hour & hour<=9] <- "peak1"
+c2019$block[13<=hour & hour<=16] <- "peak2"
+c2019$block[20<=hour & hour<=21] <- "off"
+c2019$block[10<=hour & hour<=12] <- "peak1"
+c2019$block[17<=hour & hour<=19] <- "peak2"
+c2019$block[0<=hour & hour<=5] <- "off"
+c2019$block[22<=hour & hour<=23] <- "off"
+detach(c2019)
+
+
+c2020sub <- CV19d[, c("lignite", "coal", "gas", "skonv")]
+c2020 <- sweep(c2020sub, 2, emissions, FUN="*")
+c2020$time <- c(1:3864)
+c2020$date <- CV19d$date
+c2020$hour <- as.numeric(substring(c2020$date,12,13))
+rm(emissions)
+
+
+attach(c2020)
+c2020$block[6<=hour & hour<=9] <- "peak1"
+c2020$block[13<=hour & hour<=16] <- "peak2"
+c2020$block[20<=hour & hour<=21] <- "off"
+c2020$block[10<=hour & hour<=12] <- "peak1"
+c2020$block[17<=hour & hour<=19] <- "peak2"
+c2020$block[0<=hour & hour<=5] <- "off"
+c2020$block[22<=hour & hour<=23] <- "off"
+detach(c2020)
+
+
+
+c2019a <- with(c2019, subset(c2019, time < 1873))
+c2019b <- with(c2019, subset(c2019, time >= 1873))
+c2020a <- with(c2020, subset(c2020, time < 1893))
+c2020b <- with(c2020, subset(c2020, time >= 1893))
+
+
+c2019a_mean <- aggregate(cbind(lignite,coal,gas,skonv)~block, data=c2019a, mean)
+em19a = melt(c2019a_mean,id.vars = "block", variable_name="Type", value_name="em",na.rm = TRUE)
+em19a$Period <- "2019a"
+em19a$value <- em19a$value/1000
+
+
+c2020a_mean <- aggregate(cbind(lignite,coal,gas,skonv)~block, data=c2020a, mean)  
+em20a = melt(c2020a_mean,id.vars = "block", variable_name="Type", value_name="em",na.rm = TRUE)
+em20a$Period <- "2020a"
+em20a$value <- em20a$value/1000
+
+
+em1 <- rbind.data.frame(em19a, em20a)
+
+
+
+c2019b_mean <- aggregate(cbind(lignite,coal,gas,skonv)~block, data=c2019b, mean)
+em19b = melt(c2019b_mean,id.vars = "block", variable_name="Type", value_name="em",na.rm = TRUE)
+em19b$Period <- "2019b"
+em19b$value <- em19b$value/1000
+
+
+c2020b_mean <- aggregate(cbind(lignite,coal,gas,skonv)~block, data=c2020b, mean)  
+em20b = melt(c2020b_mean,id.vars = "block", variable_name="Type", value_name="em",na.rm = TRUE)
+em20b$Period <- "2020b"
+em20b$value <- em20b$value/1000
+
+
+em2 <- rbind.data.frame(em19b, em20b)
+
+rm(c2019, c2019a, c2019a_mean, c2019b,c2019b_mean, c2019sub, c2020, c2020a, c2020a_mean, c2020b, c2020b_mean, c2020sub)
+rm(em19a, em19b, em20a,em20b)
+
+
+#5. Discussion - share of renewables
+ren20 <- data.frame(CV19d$date)
+ren20$ren20 <- (CV19d$windoff + CV19d$windon + CV19d$solar)/CV19d$total
+sumary_ren20 <- summary(ren20) # see mean
+
+ren19 <- data.frame(CV19c$date)
+ren19$ren19 <- (CV19c$windoff + CV19c$windon + CV19c$solar)/CV19c$total
+sumary_ren19 <- summary(ren19) # see mean
+
+em20 <- with(em2, subset(em2, Period=="2020b"))
+em19 <- with(em2, subset(em2, Period=="2019b"))
+reduc_post <- mean((em20$value - em19$value)/em19$value) # CO2 reduction bw 2020b and 2019b
+
+#lignite shares
+reduc_lig <- mean(CV19d$shlig, na.rm=T ) - mean(CV19c$shlig, na.rm=T)
+
+#emissions
+sume20 <- sum(em20$value, na.rm = TRUE)  
+sume19 <- sum(em19$value, na.rm = TRUE)
+
+lige20 <- aggregate(em20$value, by=list(em20$variable), FUN=sum)
+lige19 <- aggregate(em19$value, by=list(em19$variable), FUN=sum)
+
+proplig20 <- lige20[c(1),c(2)]/sume20
+proplig19 <- lige19[c(1),c(2)]/sume19
+
+emissionsligred <- (proplig20-proplig19)*100
+
+setwd("C:/Users/glori/Documents/Papers_202005/4_Paper_short/Replication/Py/All")
+#Gathering all welfare results for section 5
+work_book3 <- createWorkbook()
+addWorksheet(work_book3, sheetName="sumary_ren20")
+writeData(work_book3, "sumary_ren20", sumary_ren20)
+addWorksheet(work_book3, sheetName="sumary_ren19")
+writeData(work_book3, "sumary_ren19", sumary_ren19)
+addWorksheet(work_book3, sheetName="reduc_post")
+writeData(work_book3, "reduc_post", reduc_post)
+addWorksheet(work_book3, sheetName="reduc_lig")
+writeData(work_book3, "reduc_lig", reduc_lig)
+addWorksheet(work_book3, sheetName="emissionsligred")
+writeData(work_book3, "emissionsligred", emissionsligred)
+saveWorkbook(work_book3, "Section5.xlsx")
+
+rm(ren19, ren20, em20, em19, lige19, lige20, emissionsligred, proplig19, proplig20, reduc_lig, reduc_post, sumary_ren19, sumary_ren20, sume19, sume20, work_book3)
+  
+write_xlsx(em1, "emissionsA.xlsx") 
+write_xlsx(em2, "emissionsB.xlsx") 
+
+
+d <- c(0.5,0.5)
+
+
+graphfa <- ggplot(em1, aes(x=Period, y=value, fill= Period))+
+  geom_bar(stat = "identity", color="black", aes(alpha=Type),
+           #position =position_dodge(),  
+           width = d)+
+  facet_wrap(.~block)+
+  #geom_errorbar(aes(ymin=lb, ymax=ub, width=0.2),
+  #             position=position_dodge(0.5))+
+  
+  coord_cartesian(ylim=c(0,12))+
+  scale_fill_manual("legend", values = c("black", "red"))+
+  #geom_text(aes(label=n), position=position_dodge(width=0.5), vjust=-3, size=3)+
+  labs(title="Panel A: 23.12- 10.03 ", x = "",
+       y = "Average million tCO2 emissions")+
+  theme(legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))
+
+graphfa
+
+
+graphfb <- ggplot(em2, aes(x=Period, y=value, fill= Period))+
+  geom_bar(stat = "identity", color="black", aes(alpha=Type),
+           #position =position_dodge(),  
+           width = d)+
+  facet_wrap(.~block)+
+  #geom_errorbar(aes(ymin=lb, ymax=ub, width=0.2),
+  #             position=position_dodge(0.5))+
+  
+  coord_cartesian(ylim=c(0,12))+
+  scale_fill_manual("legend", values = c("black", "red"))+
+  #geom_text(aes(label=n), position=position_dodge(width=0.5), vjust=-3, size=3)+
+  labs(title="Panel A: 11.03 - 31.05", x = "",
+       y = "Average million tCO2 emissions")+
+  theme(legend.background= element_blank(), panel.background = element_blank(), panel.grid.major=element_line(linetype="solid", colour="gray91"), axis.line = element_line(colour = "black") , plot.title = element_text(hjust = 0.5, size=12), axis.title.x = element_text(size=9),axis.title.y = element_text(size=9))
+
+graphfb
+
+emissions <- grid.arrange(graphfa, graphfb, ncol= 2)
+
+rm(em1, em2)
+rm(d, graphfa, graphfb)
+
+pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\Total\\emissions.pdf",  
+    width = 10, 
+    height = 4.5) 
+plot(emissions)
+dev.off()
+
+###################################################################################################
+#POST-PROCESSING AFTER PYTHON - GRAPHS END
+#END OF PAPER
