@@ -43,9 +43,6 @@ if(FALSE){
   }
 
 
-#check if we need this
-##psmardc$date <- as.character(psmardc$date)
-
 #RAW DATA - START PROCESS
 #####################################################################################
 
