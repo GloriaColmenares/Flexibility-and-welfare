@@ -4,7 +4,7 @@
 # Period 23.12.2018/19 - 31.05.2019/20
 # Author : Gloria Colmenares
 # Created: May 2020
-# Last date updated: 18.05.2021
+# Last date updated: 18.05.2021 / directories 29.06.2021
 #################################################################################
 
 remove(list = ls())
@@ -51,8 +51,8 @@ if(FALSE){
 #####################################################################################
 
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189")
-
+#download file 20189 from https:/mega.nz/folder/CZETEI7J#p7oF76dloGqM0qLkbOCd_w
+setwd("C:\\Users\\...\\20189")
 
 #1c. Demand, SMARD
 #website: https://www.smard.de/home/downloadcenter/download-marktdaten#!?downloadAttributes=%7B%22selectedCategory%22:2,%22selectedSubCategory%22:5,%22selectedRegion%22:%22DE-LU%22,%22from%22:1545519600000,%22to%22:1559339999999,%22selectedFileType%22:%22CSV%22%7D
