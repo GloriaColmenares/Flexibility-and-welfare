@@ -50,9 +50,8 @@ if(FALSE){
 
 #####################################################################################
 
-
 #download file 20189 from https:/mega.nz/folder/CZETEI7J#p7oF76dloGqM0qLkbOCd_w
-setwd("C:\\Users\\...\\20189")
+setwd("C:\\Users\\...\\20189") #add your directory
 
 #1c. Demand, SMARD
 #website: https://www.smard.de/home/downloadcenter/download-marktdaten#!?downloadAttributes=%7B%22selectedCategory%22:2,%22selectedSubCategory%22:5,%22selectedRegion%22:%22DE-LU%22,%22from%22:1545519600000,%22to%22:1559339999999,%22selectedFileType%22:%22CSV%22%7D
@@ -683,7 +682,7 @@ rm(duck, duckaf, duckbef, graphd1, graphd2)
 
 #####################################################################################
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189")
+
 #Use Ia plus nueva info
 #blank sheet with plants and techs
 o <- read_xlsx("plants.xlsx")
@@ -1286,7 +1285,8 @@ summary(vf2)
 
 #####################################################################################
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189")
+#download file 20189 from https:/mega.nz/folder/CZETEI7J#p7oF76dloGqM0qLkbOCd_w
+setwd("C:\\Users\\...\\20189") #add your directory
 
 #blank sheet with plants and techs9
 o <- read_xlsx("plants.xlsx")
@@ -1294,7 +1294,8 @@ plants <- o[,-c(1)]
 o <- o[-c(1),-c(119:120)]
 o <- data.frame(o, stringsAsFactors = FALSE)
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190")
+#download file 20190 from https://mega.nz/folder/iBVn1I5J#bxLOJ4xPbtqAsEw83eIsgA
+setwd("C:\\Users\\...\\20190") #add your directory
 
 #join 2019-2020 (d)
 o01 <- read_xlsx("Output_(10022021144324).xlsx")
@@ -1399,7 +1400,7 @@ rm(mean, mean2)
 
 
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189")
+setwd("C:\\Users\\...\\20189") #add your directory
 #reading chp data
 chp <- read_xlsx("Inputdata_chp.xlsx")
 chp <- chp[c(3841:7704),]
@@ -1409,7 +1410,7 @@ rm(chp)
 
 ############################################################################
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190")
+setwd("C:\\Users\\...\\20190") #add your directory
 wchp <- res[, c(3:120)]
 wchp1 <- data.frame(stack(wchp))
 wchp2 <- wchp1[, c(2,1)]
@@ -1551,7 +1552,8 @@ py5$prices <- rep(CV19d$price,119)
 
 #####################################
 #adding loadf
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190")
+setwd("C:\\Users\\...\\20190") #add your directory
+
 lf <- data.frame(read_excel("loadfa_b.xlsx"))
 summary(res)
 res1[is.na(res1)] <- 0
@@ -1602,7 +1604,7 @@ rm(fco, fco1, fco2, fco3, fco4, py6)
 
 #ddtp <- create_series('2018-12-23' ~ '2020-04-20', '1 hour')
 #write_xlsx(ddtp, "ddtp.xlsx")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189")
+setwd("C:\\Users\\...\\20189") #add your directory
 temper <- data.frame(read_excel("temper_all.xlsx"))
 temper[temper == -999] <- NA
 temper2<- temper[-c(1:3, 1:8763),-c(1:3)]
@@ -1727,7 +1729,7 @@ rm(py8, py5, py9, py93, py94)
 
 #####################################
 #ramping costs 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190")
+setwd("C:\\Users\\...\\20190") #add your directory
 ramp <- data.frame(read_excel("rampchp2_b.xlsx", col_types = c("text",
                                                                "numeric", "numeric", "numeric", "numeric",
                                                                "numeric", "numeric", "numeric", "numeric", "numeric",
@@ -1931,7 +1933,8 @@ rm(afternoon, increaseA, increaseA.pm, increaseB, increaseB.pm, meanA, meanA.pm,
 #Pass-through, welfare and CO2 emissions - Figures 6, 7, 8, 9, 10
 ############################################################################################
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\All") 
+#download file py from https://mega.nz/folder/ORdhHYiZ#QJM1NRunkwZTc2IBExzc-A
+setwd("C:\\Users\\...\\py") #add your directory
 
 #Pt - fuel costs
 #Figure 6
@@ -1998,7 +2001,7 @@ rm(d, d1, d2)
 
 
 
-pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\All\\pt_fuel.pdf",  
+pdf(file = "C:\\...\\Py\\All\\pt_fuel.pdf",  #add your directory
     width = 10, 
     height = 4.5) 
 plot(pt_fuel)
@@ -2062,7 +2065,7 @@ graphfb
 pt_CO2 <- grid.arrange(graphfa, graphfb, ncol= 2)
 
 
-pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\All\\pt_CO2.pdf",  
+pdf(file = "C:\\...\\Py\\All\\pt_CO2.pdf",  #add your directory
     width = 10, 
     height = 4.5) 
 plot(pt_CO2)
@@ -2072,7 +2075,7 @@ dev.off()
 
 #Figure 8
 #Pt - Total 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\Total") 
+setwd("C:\\...\\Py\\Total") #add your directory
 
 library(readxl)
 pt <- data.frame(read_excel("rest_demand_response.xlsx")) 
@@ -2159,7 +2162,7 @@ graphfb
 
 pt_total <- grid.arrange(graphfa, graphfb, ncol= 2)
 
-pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\Total\\pt_total.pdf",  
+pdf(file = "C:\\...\\Py\\Total\\pt_total.pdf",  #add your directory
     width = 10, 
     height = 4.5) 
 plot(pt_fuel)
@@ -2177,30 +2180,30 @@ dev.off()
 remove(list = ls())
 
 #2019a
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\off\\tc") 
+setwd("C:\\...\\Py\\2019a\\off\\tc") #add your directory
 w19aoff <- read.csv(file = 'icps1_o.csv')
 colnames(w19aoff) <-c("ps", "cs")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a") 
+setwd("C:\\...\\Py\\2019a") #add your directory
 t19aoff <- read.csv(file = '19aoff.csv')
 t19aoff <- t19aoff[,-c(1)]
 tw19aoff <- cbind.data.frame(t19aoff,w19aoff)
 rm(t19aoff, w19aoff)
 
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p1\\tc") 
+setwd("C:\\...\\Py\\2019a\\p1\\tc")  #add your directory
 w19ap1 <- read.csv(file = 'icps1_o.csv')
 colnames(w19ap1) <-c("ps", "cs")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a") 
+setwd("C:\\...\\Py\\2019a")  #add your directory
 t19ap1 <- read.csv(file = '19ap1.csv')
 t19ap1 <- t19ap1[,-c(1)]
 tw19ap1 <- cbind.data.frame(t19ap1,w19ap1)
 rm(t19ap1, w19ap1)
 
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p2\\tc") 
+setwd("C:\\...\\Py\\2019a\\p2\\tc")  #add your directory
 w19ap2 <- read.csv(file = 'icps1_o.csv')
 colnames(w19ap2) <-c("ps", "cs")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a") 
+setwd("C:\\...\\Py\\2019a")  #add your directory
 t19ap2 <- read.csv(file = '19ap2.csv')
 t19ap2 <- t19ap2[,-c(1)]
 tw19ap2 <- cbind.data.frame(t19ap2,w19ap2)
@@ -2208,30 +2211,30 @@ rm(t19ap2, w19ap2)
 
 
 #2019b
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\off\\tc") 
+setwd("C:\\...\\Py\\2019b\\off\\tc")  #add your directory
 w19boff <- read.csv(file = 'icps1_o.csv')
 colnames(w19boff) <-c("ps", "cs")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b") 
+setwd("C:\\...\\Py\\2019b")  #add your directory
 t19boff <- read.csv(file = '19boff.csv')
 t19boff <- t19boff[,-c(1)]
 tw19boff <- cbind.data.frame(t19boff,w19boff)
 rm(t19boff, w19boff)
 
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p1\\tc") 
+setwd("C:\\...\\Py\\2019b\\p1\\tc")  #add your directory
 w19bp1 <- read.csv(file = 'icps1_o.csv')
 colnames(w19bp1) <-c("ps", "cs")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b") 
+setwd("C:\\...\\Py\\2019b")  #add your directory
 t19bp1 <- read.csv(file = '19bp1.csv')
 t19bp1 <- t19bp1[,-c(1)]
 tw19bp1 <- cbind.data.frame(t19bp1,w19bp1)
 rm(t19bp1, w19bp1)
 
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p2\\tc") 
+setwd("C:\\...\\Py\\2019b\\p2\\tc")  #add your directory
 w19bp2 <- read.csv(file = 'icps1_o.csv')
 colnames(w19bp2) <-c("ps", "cs")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b") 
+setwd("C:\\...\\Py\\2019b")  #add your directory
 t19bp2 <- read.csv(file = '19bp2.csv')
 t19bp2 <- t19bp2[,-c(1)]
 tw19bp2 <- cbind.data.frame(t19bp2,w19bp2)
@@ -2249,20 +2252,20 @@ tw20aoff <- cbind.data.frame(t20aoff,w20aoff)
 rm(t20aoff, w20aoff)
 
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p1\\tc") 
+setwd("C:\\...\\Py\\2020a\\p1\\tc")  #add your directory
 w20ap1 <- read.csv(file = 'icps1_o.csv')
 colnames(w20ap1) <-c("ps", "cs")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a") 
+setwd("C:\\...\\Py\\2020a")  #add your directory
 t20ap1 <- read.csv(file = '20ap1.csv')
 t20ap1 <- t20ap1[,-c(1)]
 tw20ap1 <- cbind.data.frame(t20ap1,w20ap1)
 rm(t20ap1, w20ap1)
 
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p2\\tc") 
+setwd("C:\\...\\Py\\2020a\\p2\\tc")  #add your directory
 w20ap2 <- read.csv(file = 'icps1_o.csv')
 colnames(w20ap2) <-c("ps", "cs")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a") 
+setwd("C:\\...\\Py\\2020a")  #add your directory
 t20ap2 <- read.csv(file = '20ap2.csv')
 t20ap2 <- t20ap2[,-c(1)]
 tw20ap2 <- cbind.data.frame(t20ap2,w20ap2)
@@ -2271,30 +2274,30 @@ rm(t20ap2, w20ap2)
 
 
 #2020b
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\off\\tc") 
+setwd("C:\\...\\Py\\2020b\\off\\tc")  #add your directory
 w20boff <- read.csv(file = 'icps1_o.csv')
 colnames(w20boff) <-c("ps", "cs")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b") 
+setwd("C:\\...\\Py\\2020b")  #add your directory
 t20boff <- read.csv(file = '20boff.csv')
 t20boff <- t20boff[,-c(1)]
 tw20boff <- cbind.data.frame(t20boff,w20boff)
 rm(t20boff, w20boff)
 
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p1\\tc") 
+setwd("C:\\...\\Py\\2020b\\p1\\tc")  #add your directory
 w20bp1 <- read.csv(file = 'icps1_o.csv')
 colnames(w20bp1) <-c("ps", "cs")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b") 
+setwd("C:\\...\\Py\\2020b")  #add your directory
 t20bp1 <- read.csv(file = '20bp1.csv')
 t20bp1 <- t20bp1[,-c(1)]
 tw20bp1 <- cbind.data.frame(t20bp1,w20bp1)
 rm(t20bp1, w20bp1)
 
 
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p2\\tc") 
+setwd("C:\\...\\Py\\2020b\\p2\\tc")  #add your directory
 w20bp2 <- read.csv(file = 'icps1_o.csv')
 colnames(w20bp2) <-c("ps", "cs")
-setwd("C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b") 
+setwd("C:\\...\\Py\\2020b")  #add your directory
 t20bp2 <- read.csv(file = '20bp2.csv')
 t20bp2 <- t20bp2[,-c(1)]
 tw20bp2 <- cbind.data.frame(t20bp2,w20bp2)
@@ -2512,7 +2515,7 @@ b$dif <- (b$dif1+b$dif2)/2
 summary(b) # mean 5.589
 
 
-setwd("C:/Users/glori/Documents/Papers_202005/4_Paper_short/Replication/Py/All")
+setwd("C:\\...\\Py\\All")  #add your directory
 
 write_xlsx(a, "welfA.xlsx") 
 write_xlsx(b, "welfB.xlsx") 
@@ -2593,7 +2596,7 @@ graphcsb
 t_welf <- grid.arrange(graphcsa, graphcsb, ncol= 2)
 
 
-pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\Total\\t_welf.pdf",  
+pdf(file = "C:\\...\\Py\\Total\\t_welf.pdf",   #add your directory
     width = 10, 
     height = 4.5) 
 plot(t_welf)
@@ -2714,7 +2717,7 @@ proplig19 <- lige19[c(1),c(2)]/sume19
 
 emissionsligred <- (proplig20-proplig19)*100
 
-setwd("C:/Users/glori/Documents/Papers_202005/4_Paper_short/Replication/Py/All")
+setwd("C:/.../Py/All") #add your directory
 #Gathering all welfare results for section 5
 work_book3 <- createWorkbook()
 addWorksheet(work_book3, sheetName="sumary_ren20")
@@ -2778,7 +2781,7 @@ emissions <- grid.arrange(graphfa, graphfb, ncol= 2)
 rm(em1, em2)
 rm(d, graphfa, graphfb)
 
-pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\Total\\emissions.pdf",  
+pdf(file = "C:\\...\\Py\\Total\\emissions.pdf",   #add your directory
     width = 10, 
     height = 4.5) 
 plot(emissions)
