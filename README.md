@@ -32,5 +32,5 @@ Return to R to generate graphs of the results
 
 
 ***
-*The file add_raw contains the match data of stations used to obtain daily temperatures (https://mega.nz/folder/eNURDIbb#9C0H39zSt4d4cbYtII3pLg)
+*The file add_raw contains the matched data of stations used to obtain daily temperatures (https://mega.nz/folder/eNURDIbb#9C0H39zSt4d4cbYtII3pLg)
 ***
