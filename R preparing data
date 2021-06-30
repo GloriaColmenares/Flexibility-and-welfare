@@ -1,11 +1,11 @@
-#################################################################################
+########################################################################################################################################
 # Evidence of Flexibility and its Economic Implications on the Day-ahead Electricity Market
-# Processing raw data, descriptive tables, ramping results and graphs, and building panel data for python
+# Processing raw data, descriptive tables, ramping results and graphs, building panel data for python, and graphs of python results
 # Period 23.12.2018/19 - 31.05.2019/20
 # Author : Gloria Colmenares
 # Created: May 2020
 # Last date updated: 18.05.2021 / directories 29.06.2021
-#################################################################################
+#########################################################################################################################################
 
 remove(list = ls())
 
