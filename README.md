@@ -4,7 +4,7 @@ Codes for "Evidence of flexibility and its economic implications on the electric
 **************************************************************************************
 Using R codes preparing the data
 **************************************************************************************
-1. Download file 20189 from https:/mega.nz/folder/CZETEI7J#p7oF76dloGqM0qLkbOCd_w
+1. Download file 20189 from https://mega.nz/folder/CZETEI7J#p7oF76dloGqM0qLkbOCd_w 
 2. Run R until end of raw data - line 427  
 3. Generate data graphs lines 430-650
 4. Generate panel data for python pypblp - start/stop1 lines 653-1262
