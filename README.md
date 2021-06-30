@@ -2,7 +2,7 @@
 Codes for "Evidence of flexibility and its economic implications on the electricity day-ahead market"
 
 **************************************************************************************
-Using R codes preparing the data
+Using R to prepare the data
 **************************************************************************************
 1. Download files 20189 from https://mega.nz/folder/CZETEI7J#p7oF76dloGqM0qLkbOCd_w 
 2. Run R until end of raw data - line 427  
@@ -22,7 +22,7 @@ Go to python (or use the files that are already solved, directly in R)
 
 
 **************************************************************************************
-Return to R to generate result graphs
+Return to R to generate graphs of the results
 **************************************************************************************
 12. Download file py from https://mega.nz/folder/ORdhHYiZ#QJM1NRunkwZTc2IBExzc-A (especially rest_demand_response.xlsx)
 13. To generate pass through graphs, run R lines 1931-2169 (this code creates plots, so add your paths, searching for #add your directory)
