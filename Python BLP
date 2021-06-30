@@ -31,13 +31,13 @@ pyblp.__version__
 ###############################################################################
 #OFF
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1873)]
 product_data = vfi1.loc[(vfi1.block == "off"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a"
+cd "C:\\...\\Py\\2019a" #in python directories run one line alone
 product_data.to_csv('19aoff.csv', index = False)
 
 del product_data['Unnamed: 0']
@@ -74,7 +74,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\off"
+cd "C:\\...\\Py\\2019a\\off" #in python directories run one line alone
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
 a.keys()
@@ -137,13 +137,13 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2019a
 #PEAK1
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1873)]
 product_data = vfi1.loc[(vfi1.block == "peak1"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p1"
+cd "C:\\...\\Py\\2019a\\p1" #in python directories run one line alone
 product_data.to_csv('19ap1.csv', index = False)
 
 del product_data['Unnamed: 0']
@@ -240,12 +240,12 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2019a
 #PEAK2
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1873)]
 product_data = vfi1.loc[(vfi1.block == "peak2"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a"
+cd "C:\\...\\Py\\2019a" #in python directories run one line alone
 product_data.to_csv('19ap2.csv', index = False)
 
 del product_data['Unnamed: 0']
@@ -280,7 +280,7 @@ elasticities = results.compute_elasticities
 elasticities
 
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p2"
+cd "C:\\...\\Py\\2019a\\p2" #in python directories run one line alone
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
 a.keys()
@@ -343,12 +343,12 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 ###############################################################################
 #OFF
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] >=1873)]
 product_data = vfi1.loc[(vfi1.block == "off"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b"
+cd "C:\\...\\Py\\2019b" #in python directories run one line alone
 product_data.to_csv('19boff.csv', index = False)
 
 del product_data['Unnamed: 0']
@@ -384,7 +384,7 @@ elasticities = results.compute_elasticities
 elasticities
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\off"
+cd "C:\\...\\Py\\2019b\\off" #in python directories run one line alone
 #this is to calculate p values for the demand side estructural errors
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -447,12 +447,12 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2019b
 #PEAK1
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] >=1873)]
 product_data = vfi1.loc[(vfi1.block == "peak1"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b"
+cd "C:\\...\\Py\\2019b" #in python directories run one line alone
 product_data.to_csv('19bp1.csv', index = False)
 
 del product_data['Unnamed: 0']
@@ -488,7 +488,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p1"
+cd "C:\\...\\Py\\2019b\\p1" #in python directories run one line alone
 
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -553,12 +553,12 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #PEAK2
 
  
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] >=1873)]
 product_data = vfi1.loc[(vfi1.block == "peak2"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b"
+cd "C:\\...\\Py\\2019b" #in python directories run one line alone
 product_data.to_csv('19bp2.csv', index = False)
 
 del product_data['Unnamed: 0']
@@ -593,7 +593,7 @@ elasticities = results.compute_elasticities
 elasticities
 
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p2"
+cd "C:\\...\\Py\\2019b\\p2" #in python directories run one line alone
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
 a.keys()
@@ -658,12 +658,12 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 ###############################################################################
 #OFF
  
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1897)]
 product_data = vfi1.loc[(vfi1.block == "off"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a"
+cd "C:\\...\\Py\\2020a" #in python directories run one line alone
 product_data.to_csv('20aoff.csv', index = False)
 
 del product_data['Unnamed: 0']
@@ -700,7 +700,7 @@ elasticities
 
 #Post-estimation results
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\off"
+cd "C:\\...\\Py\\2020a\\off" #in python directories run one line alone
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
 a.keys()
@@ -762,12 +762,12 @@ icps1_o.to_csv('icps1_o.csv', index = False)
  #2020a
 #peak1
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1897)]
 product_data = vfi1.loc[(vfi1.block == "peak1"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a"
+cd "C:\\...\\Py\\2020a" #in python directories run one line alone
 product_data.to_csv('20ap1.csv', index = False)
 
 del product_data['Unnamed: 0']
@@ -804,7 +804,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p1"
+cd "C:\\...\\Py\\2020a\\p1" #in python directories run one line alone
 #pvalues
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -868,12 +868,12 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2020a
 #PEAK2
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1897)]
 product_data = vfi1.loc[(vfi1.block == "peak2"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a"
+cd "C:\\...\\Py\\2020a" #in python directories run one line alone
 product_data.to_csv('20ap2.csv', index = False)
 
 del product_data['Unnamed: 0']
@@ -912,7 +912,7 @@ elasticities
 
 #Post-estimation results
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p2"
+cd "C:\\...\\Py\\2020a\\p2" #in python directories run one line alone
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
 a.keys()
@@ -981,12 +981,12 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 ###############################################################################
 #OFF
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] >=1897)]
 product_data = vfi1.loc[(vfi1.block == "off"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b"
+cd "C:\\...\\Py\\2020b" #in python directories run one line alone
 product_data.to_csv('20boff.csv', index = False)
 
 del product_data['Unnamed: 0']
@@ -1024,7 +1024,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\off"
+cd "C:\\...\\Py\\2020b\\off" #in python directories run one line alone
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
 a.keys()
@@ -1089,12 +1089,12 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2020b
 #PEAK1
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] >=1897)]
 product_data = vfi1.loc[(vfi1.block == "peak1"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b"
+cd "C:\\...\\Py\\2020b" #in python directories run one line alone
 product_data.to_csv('20bp1.csv', index = False)
 
 del product_data['Unnamed: 0']
@@ -1132,7 +1132,7 @@ elasticities
 
 #Post-estimation results
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p1"
+cd "C:\\...\\Py\\2020b\\p1" #in python directories run one line alone
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
 a.keys()
@@ -1194,12 +1194,12 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2020b
 #PEAK2
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] >=1897)]
 product_data = vfi1.loc[(vfi1.block == "peak2"), ]
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b"
+cd "C:\\...\\Py\\2020b" #in python directories run one line alone
 product_data.to_csv('20bp2.csv', index = False)
 
 
@@ -1236,7 +1236,7 @@ elasticities
 
 #Post-estimation results
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p2"
+cd "C:\\...\\Py\\2020b\\p2" #in python directories run one line alone
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
 a.keys()
@@ -1303,7 +1303,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2019a - TC
 #OFF
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1873)]
@@ -1347,7 +1347,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\off\\tc"
+cd "C:\\...\\Py\\2019a\\off\\tc" #in python directories run one line alone
 
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -1414,7 +1414,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2019a
 #PEAK1 - tc
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1873)]
@@ -1456,7 +1456,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p1\\tc"
+cd "C:\\...\\Py\\2019a\\p1\\tc" #in python directories run one line alone
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
 a.keys()
@@ -1524,7 +1524,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2019a
 #PEAK1 - tc
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1873)]
@@ -1566,7 +1566,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p1\\tc"
+cd "C:\\...\\Py\\2019a\\p1\\tc" #in python directories run one line alone
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
 a.keys()
@@ -1632,7 +1632,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2019a
 #PEAK1 - tc
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1873)]
@@ -1674,7 +1674,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019a\\p1\\tc"
+cd "C:\\...\\Py\\2019a\\p1\\tc" #in python directories run one line alone
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
 a.keys()
@@ -1739,13 +1739,13 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 
 
 
-#################################ANTES DE ESTO REVISAR
+#################################
 
 #2019b
 #peak1 -tc
 
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] >=1873)]
 product_data = vfi1.loc[(vfi1.block == "peak1"), ]
@@ -1787,7 +1787,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p1\\tc"
+cd "C:\\...\\Py\\2019b\\p1\\tc" #in python directories run one line alone
 
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -1854,7 +1854,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2019b
 #peakk2 - tc
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20189"
+cd "C:\\...\\20189" #in python directories run one line alone
 vfi = pd.read_csv(r'201819_a.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] >=1873)]
 product_data = vfi1.loc[(vfi1.block == "peak2"), ]
@@ -1895,7 +1895,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2019b\\p2\\tc"
+cd "C:\\...\\Py\\2019b\\p2\\tc" #in python directories run one line alone
 
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -1961,7 +1961,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2020a
 #OFF -tc
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1897)]
@@ -2007,7 +2007,7 @@ elasticities
 
 #Post-estimation results
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\off\\tc"
+cd "C:\\...\\Py\\2020a\\off\\tc" #in python directories run one line alone
 
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -2076,7 +2076,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #peak1 -tc
 
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1897)]
 product_data = vfi1.loc[(vfi1.block == "peak1"), ]
@@ -2120,7 +2120,7 @@ elasticities
 
 #Post-estimation results
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p1\\tc"
+cd "C:\\...\\Py\\2020a\\p1\\tc" #in python directories run one line alone
 
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -2198,7 +2198,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 
 
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] <1897)]
@@ -2242,7 +2242,7 @@ elasticities
 
 #Post-estimation results
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020a\\p2\\tc"
+cd "C:\\...\\Py\\2020a\\p2\\tc" #in python directories run one line alone
 
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -2309,7 +2309,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #OFF -tc
 
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] >=1897)]
@@ -2353,7 +2353,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\off\\tc"
+cd "C:\\...\\Py\\2020b\\off\\tc" #in python directories run one line alone
 
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -2420,7 +2420,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2020b
 #peak1 -tc
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] >=1897)]
 product_data = vfi1.loc[(vfi1.block == "peak1"), ]
@@ -2462,7 +2462,7 @@ elasticities
 
 
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p1\\tc"
+cd "C:\\...\\Py\\2020b\\p1\\tc" #in python directories run one line alone
 
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -2530,7 +2530,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 #2020b
 #peak2 -tc
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\20190"
+cd "C:\\...\\20190" #in python directories run one line alone
 
 vfi = pd.read_csv(r'20190_b.cvs', index_col=False)
 vfi1 = vfi[(vfi['time'] >=1897)]
@@ -2574,7 +2574,7 @@ elasticities
 
 
 #Post-estimation results
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\2020b\\p2\\tc"
+cd "C:\\...\\Py\\2020b\\p2\\tc" #in python directories run one line alone
 
 import pickle
 a = pyblp.ProblemResults.to_dict(results)
@@ -2643,7 +2643,7 @@ icps1_o.to_csv('icps1_o.csv', index = False)
 import os
 import pandas as pd
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\All"
+cd "C:\\...\\Py\\All" #in python directories run one line alone
 cwd = os.path.abspath('') 
 files = os.listdir(cwd) 
 
@@ -2660,7 +2660,7 @@ res_dr.to_excel('res_demand_response.xlsx', index = True)
 import os
 import pandas as pd
 
-cd "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\Py\\Total"
+cd "C:\\...\\Py\\Total" #in python directories run one line alone
 
 cwd = os.path.abspath('') 
 files = os.listdir(cwd) 
