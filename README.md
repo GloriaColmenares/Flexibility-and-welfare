@@ -7,7 +7,7 @@ Using R codes preparing the data
 1. Download files 20189 from https://mega.nz/folder/CZETEI7J#p7oF76dloGqM0qLkbOCd_w 
 2. Run R until end of raw data - line 427  
 3. Generate data graphs, lines 430-650
-4. Generate panel data for python package pypblp - from start to stop1, lines 653-1262
+4. Generate panel data for python package pyblp - from start to stop1, lines 653-1262
 5. Use file plants.xlsx from file 20189 
 6. Download file 20190 from https://mega.nz/folder/iBVn1I5J#bxLOJ4xPbtqAsEw83eIsgA
 7. Generate panel data for python pypblp - from start to stop2, lines 1300-1872 (this code switches between files 20189 and 20190, so add your paths, searching for #add your directory)
