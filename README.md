@@ -27,3 +27,8 @@ Return to R to generate result graphs
 3. Welfare graph, run R lines 2180-2605 (this code creates plots, so add your paths, searching for #add your directory)
 4. CO2 emissions' graph, run R lines 2608-2792 (this code creates plots, so add your paths, searching for #add your directory)
 
+
+
+***
+File add_raw contains the data for daily temperatures (https://mega.nz/folder/eNURDIbb#9C0H39zSt4d4cbYtII3pLg)
+***
