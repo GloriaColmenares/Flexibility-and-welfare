@@ -465,7 +465,7 @@ graph3d <- ggplot(CV19d, aes(x=date)) +
 
 prices <- grid.arrange(graph3c, graph3d, ncol= 1)
 
-pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\prices.pdf",  
+pdf(file = "C:\\...\\prices.pdf",  
     width = 10, 
     height = 10) 
 plot(prices)
@@ -512,7 +512,7 @@ graph4d <- ggplot(CV19d, aes(x=date)) +
 
 ren <- grid.arrange(graph4c, graph4d, ncol= 1)
 
-pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\ren.pdf",  
+pdf(file = "C:\\...\\ren.pdf",  
     width = 10, 
     height = 10) 
 plot(ren)
@@ -637,7 +637,7 @@ graphd2 <- ggplot(duckaf, aes(x=hour)) +
 
 duck <- grid.arrange(graphd1, graphd2, ncol= 2)
 
-pdf(file = "C:\\Users\\glori\\Documents\\Papers_202005\\4_Paper_short\\Replication\\duck.pdf",  
+pdf(file = "C:\\...\\duck.pdf",  
     width = 10, 
     height = 6) 
 plot(duck)
@@ -650,7 +650,7 @@ rm(duck, duckaf, duckbef, graphd1, graphd2)
 .
 
 
-#PANEL DATA CONSTRUCTION FOR PYTHON PYPBLP - START1
+#PANEL DATA CONSTRUCTION FOR PYTHON PYBLP - START1
 #############################################################################################
 
 #####################################################################################
@@ -1260,14 +1260,14 @@ rm(plants, py11, py12, ramp, ramp4, Summary2, res, res1, vf2v, id, m, py13)
 summary(vf2)
 
 #############################################################################################
-#PANEL DATA CONSTRUCTION FOR PYTHON PYPBLP - END1
+#PANEL DATA CONSTRUCTION FOR PYTHON PYBLP - END1
 
 
 
 
 
 
-#PANEL DATA CONSTRUCTION FOR PYTHON PYPBLP - START2
+#PANEL DATA CONSTRUCTION FOR PYTHON PYBLP - START2
 #############################################################################################
 
 #####################################################################################
@@ -1870,7 +1870,7 @@ rm(plants, py11, py12, ramp, ramp4, Summary2, res, res1, vf2v, py13)
 
 
 #############################################################################################
-#PANEL DATA CONSTRUCTION FOR PYTHON PYPBLP - END2
+#PANEL DATA CONSTRUCTION FOR PYTHON PYBLP - END2
 
 
 #TABLES & RESULTS RAMPING REQUIREMENTS:- START
