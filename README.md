@@ -18,11 +18,11 @@ Go to python (or use the files that are already solved, directly in R)
 *************************************************************************************
 9. Use panel data files generated previously from R: "20189_a.cvs" and "20190_b.cvs" 
 10. Running this code generates files per block of hour (off-peak, peak1, peak2 for each period), or the files in the directory can be used directly in R
-11. Use the file rest_demand_response.xlsx (last line of code) to generate the following result graphs
+11. Use the file rest_demand_response.xlsx (last line of code) to generate graphs of results
 
 
 **************************************************************************************
-Return to R to generate graphs of the results
+Return to R to generate graphs of results
 **************************************************************************************
 12. Download file py from https://mega.nz/folder/ORdhHYiZ#QJM1NRunkwZTc2IBExzc-A (especially rest_demand_response.xlsx)
 13. To generate pass through graphs, run R lines 1931-2169 (this code creates plots, so add your paths, searching for #add your directory)
