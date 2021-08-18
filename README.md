@@ -2,7 +2,7 @@
 Codes for "Evidence of flexibility and its economic implications on the electricity day-ahead market"
 
 **************************************************************************************
-Use R to prepare the data
+Use codes in file *R preparing data*
 **************************************************************************************
 1. Download files 20189 from https://mega.nz/folder/CZETEI7J#p7oF76dloGqM0qLkbOCd_w 
 2. Run R until end of raw data - line 427  
@@ -14,7 +14,7 @@ Use R to prepare the data
 8. Generate summary tables and ramping requirements (shown in paper): run lines 1875-1926
 
 **************************************************************************************
-Go to python (or use the files that are already solved, directly in R)
+Go codes *Python BLP* (or use the files that are already solved, directly in R)
 *************************************************************************************
 9. Use panel data files generated previously from R: "20189_a.cvs" and "20190_b.cvs" 
 10. Running this code generates files per block of hour (off-peak, peak1, peak2 for each period), or the files in the directory can be used directly in R
@@ -22,7 +22,7 @@ Go to python (or use the files that are already solved, directly in R)
 
 
 **************************************************************************************
-Return to R to generate graphs of results
+Return to *R preparing data* to generate graphs of results
 **************************************************************************************
 12. Download file py from https://mega.nz/folder/ORdhHYiZ#QJM1NRunkwZTc2IBExzc-A (especially rest_demand_response.xlsx)
 13. To generate pass through graphs, run R lines 1931-2169 (this code creates plots, so add your paths, searching for #add your directory)
