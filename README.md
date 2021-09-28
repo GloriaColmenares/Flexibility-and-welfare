@@ -9,7 +9,7 @@ Use codes in file *R preparing data*
 3. Generate data graphs, lines 430-650
 4. Generate panel data for python package pyblp - from start to stop1, lines 653-1262
 5. Use file plants.xlsx from file 20189 
-6. Download 20190 file [here](https://mega.nz/folder/iBVn1I5J#bxLOJ4xPbtqAsEw83eIsgA)  
+6. Download 20190 files [here](https://mega.nz/folder/iBVn1I5J#bxLOJ4xPbtqAsEw83eIsgA)  
 7. Generate panel data for python pyblp - from start to stop2, lines 1300-1872 (this code switches between files 20189 and 20190, so add your paths, searching for #add your directory)
 8. Generate summary tables and ramping requirements (shown in paper): run lines 1875-1926
 
